@@ -1,6 +1,6 @@
 # Product library — build plan
 
-> **Status:** next: P-1.1, after F-2 · **NOW.md rows:** P-1 · **Reference:** none yet
+> **Status:** next: P-1.1 · **NOW.md rows:** P-1 · **Reference:** none yet
 
 Search and matching are only as good as the product data behind them. This part turns a brand's PDF datasheet or catalog
 into reviewed, normalized products in the database.

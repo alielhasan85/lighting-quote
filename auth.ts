@@ -11,6 +11,7 @@ import NextAuth from 'next-auth';
 import Google from 'next-auth/providers/google';
 import Resend from 'next-auth/providers/resend';
 import { headers } from 'next/headers';
+import { connection } from 'next/server';
 import { cache } from 'react';
 import { LOGIN_PATH } from '@/lib/auth/callback-url';
 import { clientIp, limitMagicLink } from '@/lib/auth/rate-limit';
@@ -66,5 +67,11 @@ const nextAuth = NextAuth({
 
 export const { handlers, signIn, signOut } = nextAuth;
 
-/** The session, read once per request however many guards ask for it. */
-export const auth = cache(nextAuth.auth);
+/**
+ * The session, read once per request however many guards ask for it. connection() first: Auth.js makes a random value
+ * on each read, which Next refuses while prerendering, and a session belongs to a real request anyway.
+ */
+export const auth = cache(async () => {
+  await connection();
+  return nextAuth.auth();
+});

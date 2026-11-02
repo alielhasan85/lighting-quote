@@ -6,6 +6,9 @@
 
 export const LOGIN_PATH = '/login';
 
+/** Where a refused page goes. Here, not in authz.ts, so pure rules can use it too. */
+export const FORBIDDEN_PATH = '/forbidden';
+
 const MAX_LENGTH = 2048;
 
 // Browsers strip tabs and newlines out of a URL before reading it, so "/\t/evil.com" would become "//evil.com".

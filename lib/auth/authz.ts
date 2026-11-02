@@ -10,11 +10,9 @@ import 'server-only';
 
 import { notFound, redirect } from 'next/navigation';
 import { ACTION_ERROR } from '@/lib/actions/server/run-action';
-import { loginUrl } from './callback-url';
+import { FORBIDDEN_PATH, loginUrl } from './callback-url';
 import { getCaller, getWorkspaceRole, type Caller } from './caller';
 import { roleHasPermission, type Permission, type Role } from './permissions';
-
-const FORBIDDEN_PATH = '/forbidden';
 
 /* ─── Guards ─────────────────────────────────────────────────────────────── */
 
@@ -47,7 +45,7 @@ export async function requireWorkspacePermission(
 /* ─── Pages ──────────────────────────────────────────────────────────────── */
 
 /**
- * For page.tsx files only. In production builds Next.js empties error.message, so an error.tsx can't
+ * For page.tsx and layout.tsx files only. In production builds Next.js empties error.message, so an error.tsx can't
  * tell FORBIDDEN from a crash: a page has to redirect before the error reaches it. Server actions
  * use the factories, which return the code as a value instead.
  */
@@ -63,6 +61,18 @@ export async function requireWorkspacePermissionPage(
     if (code === ACTION_ERROR.UNAUTHENTICATED) redirect(loginUrl(`/w/${workspaceId}`));
     if (code === ACTION_ERROR.FORBIDDEN || code === ACTION_ERROR.DISABLED) redirect(FORBIDDEN_PATH);
     if (code === ACTION_ERROR.NOT_FOUND) notFound();
+    throw e; // unexpected errors → nearest error.tsx
+  }
+}
+
+/** For a page.tsx with no workspace to guard on. `returnPath` is where sign-in sends the user back to. */
+export async function requireSignedInPage(returnPath: string): Promise<Caller> {
+  try {
+    return await requireSignedIn();
+  } catch (e) {
+    const code = e instanceof Error ? e.message : '';
+    if (code === ACTION_ERROR.UNAUTHENTICATED) redirect(loginUrl(returnPath));
+    if (code === ACTION_ERROR.DISABLED) redirect(FORBIDDEN_PATH);
     throw e; // unexpected errors → nearest error.tsx
   }
 }

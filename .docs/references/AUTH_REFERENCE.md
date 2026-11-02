@@ -7,20 +7,21 @@ Who can sign in, what each role may do in a workspace, and how every page and se
 ## Quick Reference
 
 ```
-auth.ts                               Auth.js: providers, database sessions, cookie, pages, callbacks; auth() cached per request
+auth.ts                               Auth.js: providers, database sessions, cookie, pages, callbacks; auth() cached per request, after connection()
 app/api/auth/[...nextauth]/route.ts   Auth.js routes: sign-in, callbacks, the built-in sign-out page
-app/(auth)/layout.tsx                 The centered shell around every signed-out page
+app/(auth)/layout.tsx                 The centered shell around every page outside a workspace
 app/(auth)/login/page.tsx             /login: signed in → callbackUrl; otherwise login-client.tsx (email link, Google, messages)
 app/(auth)/login/check-email/page.tsx pages.verifyRequest: "Check your email"
 app/(auth)/forbidden/page.tsx         Where a refused page goes
+app/(auth)/welcome/page.tsx           /welcome: create a workspace (APP_SHELL_REFERENCE)
 app/api/cron/auth-cleanup/route.ts    Deletes expired Session, VerificationToken and RateLimit rows. Checks CRON_SECRET
 vercel.json                           Runs the cleanup nightly at 03:00 UTC
 instrumentation.ts                    Reports missing auth env at server start: production throws, development warns. CRON_SECRET only warns
 types/next-auth.d.ts                  session.user.{id, role, isActive}
-lib/auth/caller.ts                    getCaller, getWorkspaceRole: the only code that reads the session or Membership
+lib/auth/caller.ts                    getCaller, getCallerProfile, getWorkspaceRole (cached per request), getLandingMembership
 lib/auth/permissions.ts               ROLES, Permission, ROLE_PERMISSIONS: the matrix. Client-safe
-lib/auth/authz.ts                     requireSignedIn, requirePlatformAdmin, requireWorkspacePermission, requireWorkspacePermissionPage
-lib/auth/callback-url.ts              LOGIN_PATH, safeCallbackUrl, loginUrl. Pure
+lib/auth/authz.ts                     requireSignedIn, requirePlatformAdmin, requireWorkspacePermission, requireWorkspacePermissionPage, requireSignedInPage
+lib/auth/callback-url.ts              LOGIN_PATH, FORBIDDEN_PATH, safeCallbackUrl, loginUrl. Pure
 lib/auth/rate-limit.ts                MAGIC_LINK_LIMITS, clientIp, limitMagicLink
 lib/auth/secrets.ts                   REQUIRED_AUTH_ENV, missingAuthEnv, missingCleanupEnv, isCronAuthorized. Pure
 lib/actions/auth.actions.ts           signInWithEmail, signInWithGoogle: public, built by createPublicFormAction
@@ -65,7 +66,11 @@ Action  client → renameThing(raw)
 
 ## Rules
 
-- Every `page.tsx` under `(app)` calls `requireWorkspacePermissionPage` before it reads anything.
+- Every `page.tsx` under `(app)` calls `requireWorkspacePermissionPage` before it reads anything. A layout that reads
+  workspace data guards too, on top of its pages.
+- A page with no workspace to guard on calls `requireSignedInPage(returnPath)`.
+- `lib/auth/caller.ts` is the only code that reads the session or `Membership`, with one exception: `createWorkspace`
+  counts a user's memberships inside its own transaction, after its row lock.
 - Every `'use server'` export is built by a factory (`check:actions`). Exports that must run without a session go in
   `scripts/check-actions-public.json`, each with its reason.
 - Every query a workspace action runs filters by its `workspaceId`.
@@ -109,7 +114,8 @@ effect on the next request, because database sessions read the user every time.
 |---|---|
 | Database sessions, not JWT | A session is revoked by deleting its row. The cost is one read per request, cached per request |
 | No session cache in Redis | Not needed yet. If one is added, clear it whenever `role` or `isActive` changes |
-| Guards in pages and actions, not in a layout or the proxy | A layout doesn't re-run on every navigation, and one proxy matcher mistake skips a route |
+| `auth()` awaits `connection()`, not `io()` | Something under `auth()` calls `crypto.getRandomValues()`, which Next refuses while prerendering with `cacheComponents` on. A session needs a real user request, and `io()` is for content that can be cached and prefetched |
+| Guards in every page and action, never only in a layout or the proxy | A layout doesn't re-run on every navigation, and one proxy matcher mistake skips a route |
 | A custom sign-in method gets its own route, not the Credentials provider | With database sessions, Credentials makes Auth.js switch the cookie to a JWT, which breaks session lookups |
 | Auth.js, not Clerk | Same setup as Menumize. Workspaces, members and roles live in our own tables (`Workspace`, `Membership`) |
 | The top workspace role is `OWNER`, not `ADMIN` | `User.role = 'ADMIN'` already means staff of this product |

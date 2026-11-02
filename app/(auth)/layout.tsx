@@ -1,6 +1,6 @@
 import { GalleryVerticalEnd } from "lucide-react";
 
-/** The centered column from shadcn's login-05 block, around every page a signed-out user can reach. */
+/** The centered column from shadcn's login-05 block, around every page outside a workspace. */
 export default function AuthLayout({ children }: LayoutProps<"/">) {
   return (
     <div className="flex min-h-svh flex-col items-center justify-center gap-6 bg-background p-6 md:p-10">

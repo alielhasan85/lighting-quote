@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   requirePlatformAdmin,
   requireSignedIn,
+  requireSignedInPage,
   requireWorkspacePermission,
   requireWorkspacePermissionPage,
 } from './authz';
@@ -97,6 +98,27 @@ describe('requireWorkspacePermissionPage', () => {
   it('lets an unexpected error reach the error page', async () => {
     vi.mocked(getWorkspaceRole).mockRejectedValueOnce(new Error('db down'));
     await expect(requireWorkspacePermissionPage('w1', 'DATA_READ')).rejects.toThrow('db down');
+  });
+});
+
+describe('requireSignedInPage', () => {
+  it('returns the caller when they are signed in and active', async () => {
+    await expect(requireSignedInPage('/welcome')).resolves.toEqual(member);
+  });
+
+  it('sends nobody to sign-in, and back to this path afterwards', async () => {
+    vi.mocked(getCaller).mockResolvedValueOnce(null);
+    await expect(requireSignedInPage('/welcome')).rejects.toThrow('REDIRECT:/login?callbackUrl=%2Fwelcome');
+  });
+
+  it('sends a suspended account to /forbidden', async () => {
+    vi.mocked(getCaller).mockResolvedValueOnce({ ...member, isActive: false });
+    await expect(requireSignedInPage('/welcome')).rejects.toThrow('REDIRECT:/forbidden');
+  });
+
+  it('lets an unexpected error reach the error page', async () => {
+    vi.mocked(getCaller).mockRejectedValueOnce(new Error('db down'));
+    await expect(requireSignedInPage('/welcome')).rejects.toThrow('db down');
   });
 });
 

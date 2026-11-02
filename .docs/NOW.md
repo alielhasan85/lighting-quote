@@ -20,7 +20,6 @@ plan that outgrows it comes back to the founder. A part's TODO is written at its
 
 | # | Session | Gate | Budget | Done when |
 |---|---|---|---|---|
-| F-2 | App shell and workspace: shadcn sidebar layout with the module sidebar and tabs, create a workspace on first sign-in, `app/(app)/w/[workspaceId]/`, and `/` and its metadata replace the starter page. Modules not built yet show as disabled, with no routes. No invites | G1 | 1 | A new user signs in, creates a workspace, lands in the sidebar shell and sees only that workspace |
 | P-1 | Product library: upload a PDF datasheet or catalog, AI extraction, review screen, save ([TODO](todo/PRODUCT_LIBRARY_TODO.md)) | G1 | 4 | A platform admin uploads a real PDF, corrects a field beside it, approves, and sees the products in the library list, with the call's tokens in `AiUsageLog`. A whole catalog works too |
 | S-1 | Find products: by specs and keywords, by description (Voyage + pgvector), by similar image (product images captured from the PDFs) | G1 | 4 | Typing a real spec line or uploading a photo returns the right saved products, and P-4 can call the same engine for an RFQ line |
 | F-4 | Row-level security on workspace tables: a restricted database role (a table's owner skips RLS), a per-transaction `workspaceId` setting, isolation tests | G2 | 2 | A test proves a query without the workspace setting returns no private rows. Lands before P-3 |
@@ -53,4 +52,4 @@ Delete a line once it's done.
 - **Found during a session?** If it blocks a gate, the founder decides on a row. Otherwise one line in LATER.md.
 - **On neither?** Ask why now, and what drops to make room.
 
-**Last updated:** 2026-11-02 · Roadmap rebuilt around the real project workflow · next: F-2
+**Last updated:** 2026-11-02 · F-2 closed: app shell and workspace · next: P-1

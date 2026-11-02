@@ -17,6 +17,7 @@ Update order: **TODO → reference → NOW.md,** in the same commit as the code.
 | Feature | Reference | TODO |
 |---|---|---|
 | Auth & permissions | [AUTH_REFERENCE.md](references/AUTH_REFERENCE.md) | — |
+| App shell & workspace creation | [APP_SHELL_REFERENCE.md](references/APP_SHELL_REFERENCE.md) | — |
 | Product library | — | [PRODUCT_LIBRARY_TODO.md](todo/PRODUCT_LIBRARY_TODO.md) |
 
 ## Guides

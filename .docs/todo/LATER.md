@@ -7,7 +7,7 @@ doesn't block a gate adds one line here; it never starts a new TODO file without
 - Team invites: email invite, accept flow, the `MANAGER` and `SALES` roles in use (was in F-2). Until then, G2's roles walk uses `Membership` rows added by SQL, and `/forbidden`'s "ask a workspace owner to invite you" promises something that doesn't exist yet
 - Wording from before the roadmap: the brief says "supplier" where it means any company (§4 Part 2, §6, §7, §8, §13), and so does the `Workspace` comment in `prisma/schema.prisma`
 - Private company products, through the same pipeline as P-1 (brief §4, Part 2)
-- Open sign-up: once P-3 exists, anyone who signs in can create a workspace and spend AI credits. Decide invite-only or a per-workspace AI limit before P-3 reaches production
+- Open sign-up: once P-3 exists, anyone who signs in gets a workspace and can spend AI credits. One workspace per account caps each account, not how many accounts someone makes. Decide invite-only or a per-workspace AI limit before P-3 reaches production
 - Brief features on no list yet: Excel quote output, usage learning and favorites (Part 4), Ctrl+K search, Home pipeline, the clickable design test (§4.1), IES/LDT files (Part 1)
 - Part 7: follow-up and CRM, quote status pipeline, reminders, drafted follow-up emails (brief §4)
 - Email inbox intake (brief §9 Out)
@@ -21,7 +21,12 @@ doesn't block a gate adds one line here; it never starts a new TODO file without
 - Root `README.md` is still the create-next-app boilerplate
 - Lint keeps the database out of UI files only by the specifier `@/lib/db` / `@prisma/client` in `.ts`/`.tsx`: a relative path or a `.js` file gets past it
 - `createPublicFormAction` keeps only the last value of a repeated form field (`Object.fromEntries`): fix before the first public form with a multi-select
-- `getWorkspaceRole` isn't wrapped in React `cache`: a layout and a page that both guard read `Membership` twice per request (F-2 adds the first layout)
+- No `error.tsx` exists, though `lib/auth/authz.ts` sends unexpected errors to the "nearest error.tsx": a failed database read shows Next's default page
+- `public/{file,globe,next,vercel,window}.svg` are starter leftovers, unused now that `app/page.tsx` is replaced
+- The `<Suspense>` boundaries in the app shell have no loading fallback, so a slow guard shows a blank page until it resolves
+- The brief's global "New inquiry" button (§4.1) has no row until P-3 exists to receive it
+- `ModuleTabs` puts links in Radix Tabs, so they read as `role="tab"` with no panels, and Space may not follow the link (from memory of Radix, not checked). Walk it by keyboard on the first module with two or more tabs, and swap to a `<nav>` of links with `aria-current` if it fails
+- Collapsed sidebar: a disabled module is a grey icon with no label or tooltip. A disabled button takes no hover, so a tooltip needs a wrapper. It shrinks as modules get routes
 - Google sign-in with an email that already signs in by magic link gets `OAuthAccountNotLinked`: decide on `allowDangerousEmailAccountLinking` for Google, since Google verifies emails
 - A refused page returns to `/w/<id>`, not the exact page: deep links need a proxy that stamps the request path
 - The `RateLimited` and `Verification` redirects to `/login` drop `callbackUrl`, so the next attempt lands on `/`

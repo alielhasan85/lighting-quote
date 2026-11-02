@@ -29,6 +29,8 @@ client component ──calls──► lib/actions/*.actions.ts ───┘
 | The interactive part of a page | `.../<feature>/<feature>-client.tsx` | `'use client'`, receives data as props |
 | A component used by one feature | `.../<feature>/components/` | |
 | A component used by two or more | `components/` | |
+| The app shell (sidebar, module tabs) | `components/app-shell/` | See [APP_SHELL_REFERENCE](../references/APP_SHELL_REFERENCE.md) |
+| A sidebar entry | `lib/workspace/modules.ts` | No route yet → shown disabled |
 | A shadcn primitive | `components/ui/` | Generated. Theme it, don't rewrite it |
 | A shared client hook | `hooks/` | A feature-only hook stays in its feature folder |
 | A write | `lib/actions/<feature>.actions.ts` | `'use server'`. Every export built by a factory |
