@@ -40,8 +40,8 @@ client component ──calls──► lib/actions/*.actions.ts ───┘
 | An AI client (Claude, embeddings) | `lib/ai/` | Server-only. Sends no prices, client or supplier names (CLAUDE.md → AI) |
 | A prompt | `lib/ai/prompts/` | A versioned file, never an inline string |
 | A schema for AI output | `lib/ai/schemas/` | Zod. Invalid → retry once → human review |
-| A background job | `lib/jobs/` | Inngest functions: ingestion, BOQ parsing, AI calls |
-| A test fixture | `tests/fixtures/` | Anonymized BOQs, datasheets, expected outputs |
+| A background job | `lib/jobs/` | Inngest functions: ingestion, RFQ parsing, AI calls |
+| A test fixture | `tests/fixtures/` | Anonymized RFQs, datasheets, expected outputs |
 | A constant used in 2+ places | `lib/<feature>/constants.ts` or `lib/constants.ts` | Prices, limits, roles: one source |
 | A check or script | `scripts/` | |
 | Auth | `auth.ts`, `lib/auth/` | See [AUTH_REFERENCE](../references/AUTH_REFERENCE.md) |

@@ -2,18 +2,20 @@
 
 @AGENTS.md
 
-**lighting-quote (working name) is an AI quoting & submittal platform for GCC lighting suppliers:** a supplier uploads
-any inquiry, picks from 3–5 matched products per line, and sends a priced quote with its datasheet pack. Multi-tenant
-SaaS: every supplier is a **workspace**, and every workspace's data is isolated. The why:
+**lighting-quote (working name) is an AI quoting & submittal platform for lighting projects:** a contractor or lighting
+supplier uploads any RFQ or specification, picks from 3–5 matched products per line, sends RFQs to the brands, and sends
+the client a priced quote with its datasheet pack, revising it as the client changes things. Multi-tenant SaaS: every
+company is a **workspace**, and every workspace's data is isolated. The why:
 [.docs/PROJECT_BRIEF.md](.docs/PROJECT_BRIEF.md).
 
 ## Product rules
 
 ### Data and tenancy
 
-- Every supplier is a **workspace**. Every private table has `workspaceId`, and every query on it filters by it.
+- Every company (contractor or supplier) is a **workspace**. Every private table has `workspaceId`, and every query on
+  it filters by it.
 - Isolation is enforced in code today: every page and action names a permission, and every query filters by
-  `workspaceId`. Postgres row-level security is NOW.md row F-4, and lands before a real supplier's prices go in.
+  `workspaceId`. Postgres row-level security is NOW.md row F-4, and lands before P-3, the first private project data.
 - **Global library** (brands, families, variants, datasheets, images: public technical data) is shared and read-only
   for workspaces. Only platform admins write it (`createAdminAction`).
 - **Private data** (prices, private products, clients, projects, inquiries, quotes, selections, usage history) lives
@@ -39,13 +41,14 @@ SaaS: every supplier is a **workspace**, and every workspace's data is isolated.
   project.
 - Quote lines reference real product variants (global or private), not free text (free text only for "manual / no
   match" lines).
-- Documents (quote now; later sales order, RFQ, PO) share one structure: number series, status, lines, revisions, PDF.
+- Documents (client quote and brand RFQ; later sales order, PO) share one structure: number series, status, lines,
+  revisions, PDF.
 - Status changes are recorded in an **event log** table.
-- Brands can hold vendor details (contacts, currency, lead time) for future RFQs/POs.
-- Products have optional stock fields (inStock, qty, leadTimeDays).
+- Brands can hold vendor details (contacts, currency, lead time) for RFQs now and POs later.
+- Stock fields (inStock, qty, leadTimeDays) are optional and live on workspace tables: stock is private, never global.
 - A module is `lib/<module>/` (rules), `lib/queries/<module>.queries.ts`, `lib/actions/<module>.actions.ts` and its
   routes. A module reads another's data through that module's queries, never its tables.
-- Never build a module from LATER.md (sales orders, purchasing, inventory, CRM) early. Only keep the design ready.
+- Never build a module from LATER.md (sales orders, purchase orders, inventory, CRM) early. Only keep the design ready.
 
 ### Conventions
 
@@ -103,13 +106,13 @@ lib/auth/        Permissions, guards, the session reader · auth.ts = Auth.js co
 lib/ai/          Claude + embeddings clients · prompts/ (versioned) · schemas/ (zod for AI output)
 lib/jobs/        Background jobs (Inngest)
 prisma/          Schema and migrations · lib/db.ts = the client
-tests/fixtures/  Anonymized BOQs, datasheets and expected outputs: the accuracy test set
+tests/fixtures/  Anonymized RFQs, datasheets and expected outputs: the accuracy test set
 .docs/           NOW.md, references/, todo/, guides/, PROJECT_BRIEF.md
 ```
 
 **Stack:** Next.js 16 (App Router, server actions) · React 19 · TypeScript strict · Prisma 6 + Neon · Auth.js v5 ·
 Tailwind + shadcn/ui · zod · Vitest · Vercel. Added by the row that first needs them: Claude API (`@anthropic-ai/sdk`),
-Voyage embeddings + pgvector, Inngest, Vercel Blob or R2, SheetJS / ExcelJS, React-PDF / pdf-lib, Sentry.
+Voyage embeddings + pgvector, Inngest, Vercel Blob, SheetJS / ExcelJS, React-PDF / pdf-lib, Sentry.
 
 ## Commands
 

@@ -113,7 +113,7 @@ effect on the next request, because database sessions read the user every time.
 | A custom sign-in method gets its own route, not the Credentials provider | With database sessions, Credentials makes Auth.js switch the cookie to a JWT, which breaks session lookups |
 | Auth.js, not Clerk | Same setup as Menumize. Workspaces, members and roles live in our own tables (`Workspace`, `Membership`) |
 | The top workspace role is `OWNER`, not `ADMIN` | `User.role = 'ADMIN'` already means staff of this product |
-| Workspace isolation in code first; Postgres RLS is NOW.md row F-4 | RLS needs a per-transaction setting on every query and its own tests, so it lands on purpose, before real prices go in |
+| Workspace isolation in code first; Postgres RLS is NOW.md row F-4 | RLS needs a per-transaction setting on every query and its own tests, so it lands on purpose, before P-3, the first private project data |
 | Rate limits in Postgres, not in memory or Redis | Serverless instances share no memory, and Postgres adds no new service. One atomic upsert per key |
 | A refused user returns to `/w/<id>`, not the exact page | A page guard doesn't know its own path. Deep links need a proxy that stamps it |
 | A missing `CRON_SECRET` warns; a missing sign-in variable stops production | Without its secret the cron route refuses everything, so the only loss is a skipped cleanup. That isn't worth taking sign-in down |
