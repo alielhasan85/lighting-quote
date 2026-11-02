@@ -3,12 +3,26 @@
 // proven here and never by clicking around as each role.
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { requirePlatformAdmin, requireSignedIn, requireWorkspacePermission } from './authz';
+import {
+  requirePlatformAdmin,
+  requireSignedIn,
+  requireWorkspacePermission,
+  requireWorkspacePermissionPage,
+} from './authz';
 import { getCaller, getWorkspaceRole, type Caller } from './caller';
 import { ROLE_PERMISSIONS, ROLES, isRole, rolesForPermission, roleHasPermission } from './permissions';
 
 vi.mock('server-only', () => ({}));
 vi.mock('./caller', () => ({ getCaller: vi.fn(), getWorkspaceRole: vi.fn() }));
+// Next's redirect throws to stop the page, so these do too.
+vi.mock('next/navigation', () => ({
+  redirect: vi.fn((url: string) => {
+    throw new Error(`REDIRECT:${url}`);
+  }),
+  notFound: vi.fn(() => {
+    throw new Error('NOT_FOUND_PAGE');
+  }),
+}));
 
 const member: Caller = { userId: 'u1', isActive: true, isPlatformAdmin: false };
 
@@ -55,6 +69,34 @@ describe('requireWorkspacePermission', () => {
   it('refuses a member whose role lacks the permission', async () => {
     vi.mocked(getWorkspaceRole).mockResolvedValueOnce('SALES');
     await expect(requireWorkspacePermission('w1', 'SETTINGS_WRITE')).rejects.toThrow('FORBIDDEN');
+  });
+});
+
+describe('requireWorkspacePermissionPage', () => {
+  it('returns the caller when their role holds the permission', async () => {
+    await expect(requireWorkspacePermissionPage('w1', 'DATA_READ')).resolves.toEqual({ userId: 'u1', role: 'SALES' });
+  });
+
+  it('sends nobody to sign-in, and back to the workspace afterwards', async () => {
+    vi.mocked(getCaller).mockResolvedValueOnce(null);
+    await expect(requireWorkspacePermissionPage('w1', 'DATA_READ')).rejects.toThrow(
+      'REDIRECT:/login?callbackUrl=%2Fw%2Fw1',
+    );
+  });
+
+  it('sends a non-member to /forbidden', async () => {
+    vi.mocked(getWorkspaceRole).mockResolvedValueOnce(null);
+    await expect(requireWorkspacePermissionPage('w1', 'DATA_READ')).rejects.toThrow('REDIRECT:/forbidden');
+  });
+
+  it('sends a suspended account to /forbidden', async () => {
+    vi.mocked(getCaller).mockResolvedValueOnce({ ...member, isActive: false });
+    await expect(requireWorkspacePermissionPage('w1', 'DATA_READ')).rejects.toThrow('REDIRECT:/forbidden');
+  });
+
+  it('lets an unexpected error reach the error page', async () => {
+    vi.mocked(getWorkspaceRole).mockRejectedValueOnce(new Error('db down'));
+    await expect(requireWorkspacePermissionPage('w1', 'DATA_READ')).rejects.toThrow('db down');
   });
 });
 

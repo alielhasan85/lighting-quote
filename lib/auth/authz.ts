@@ -10,11 +10,10 @@ import 'server-only';
 
 import { notFound, redirect } from 'next/navigation';
 import { ACTION_ERROR } from '@/lib/actions/server/run-action';
+import { loginUrl } from './callback-url';
 import { getCaller, getWorkspaceRole, type Caller } from './caller';
 import { roleHasPermission, type Permission, type Role } from './permissions';
 
-// Where a refused page goes. Auth.js's built-in sign-in page until /login exists.
-const LOGIN_PATH = '/api/auth/signin';
 const FORBIDDEN_PATH = '/forbidden';
 
 /* ─── Guards ─────────────────────────────────────────────────────────────── */
@@ -60,7 +59,8 @@ export async function requireWorkspacePermissionPage(
     return await requireWorkspacePermission(workspaceId, permission);
   } catch (e) {
     const code = e instanceof Error ? e.message : '';
-    if (code === ACTION_ERROR.UNAUTHENTICATED) redirect(LOGIN_PATH);
+    // Back to the workspace home after sign-in, not the exact page: a page guard doesn't know its own path.
+    if (code === ACTION_ERROR.UNAUTHENTICATED) redirect(loginUrl(`/w/${workspaceId}`));
     if (code === ACTION_ERROR.FORBIDDEN || code === ACTION_ERROR.DISABLED) redirect(FORBIDDEN_PATH);
     if (code === ACTION_ERROR.NOT_FOUND) notFound();
     throw e; // unexpected errors → nearest error.tsx

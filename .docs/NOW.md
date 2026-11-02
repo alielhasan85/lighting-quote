@@ -20,7 +20,6 @@ plan that outgrows it comes back to the founder. A part's TODO is written at its
 
 | # | Session | Gate | Budget | Done when |
 |---|---|---|---|---|
-| F-1 | Auth hardening: `/login` and `/forbidden` pages, magic-link rate limit, expired-session cleanup, security headers ([AUTH_REFERENCE](references/AUTH_REFERENCE.md) → Known issues) | G2 | 1 | Known issues in AUTH_REFERENCE is empty |
 | F-2 | Workspace shell: create a workspace on first sign-in, `app/(app)/w/[workspaceId]/` layout with the module sidebar, invite members | G1 | 2 | A new user signs in, creates a workspace and invites a `SALES` member, who sees only that workspace |
 | F-3 | File storage: Vercel Blob or R2, type and size checks, stored under the workspace prefix | G1 | 1 | An upload lands under its workspace's prefix, and another workspace can't read it |
 | P-1 | Part 1, global brand library: schema, ingestion pipeline, review screen (brief §4) | G1 | 4 | 1–2 brands and 3–5 families are ingested through the review screen and searchable by spec |
@@ -37,6 +36,8 @@ Delete a line once it's done.
 - [ ] Neon: a dev branch for local work. The production `DATABASE_URL` lives only in Vercel
 - [ ] A Google OAuth client, a Resend key and `AUTH_SECRET` in `.env` and in Vercel
 - [ ] `npx prisma migrate dev --name init`, against the dev branch
+- [ ] `npx prisma migrate dev --name rate_limit`, against the dev branch, after `init` is applied and `prisma/migrations/` is committed
+- [ ] `CRON_SECRET` and `EMAIL_FROM` in `.env` and in Vercel: production refuses to start without every auth variable
 - [ ] GitHub: create `dev`, and require CI on `dev` and `main`
 - [ ] Brief: edit the mentions of Arabic (§2, §4.1, §9, §12, §13)
 
@@ -46,4 +47,4 @@ Delete a line once it's done.
 - **Found during a session?** If it blocks a gate, the founder decides on a row. Otherwise one line in LATER.md.
 - **On neither?** Ask why now, and what drops to make room.
 
-**Last updated:** 2026-11-02 · repo set up from the playbook · next: F-1
+**Last updated:** 2026-11-02 · F-1 auth hardening built, hand checks open (`.docs/hand-checks/F-1.md`) · next: F-2

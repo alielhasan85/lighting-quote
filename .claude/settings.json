@@ -61,8 +61,6 @@
       "PowerShell(npx prisma migrate deploy *)",
       "PowerShell(npx prisma db push)",
       "PowerShell(npx prisma db push *)",
-      "Read(**/.env)",
-      "Read(**/.env.*)",
       "Read(./node_modules/**)",
       "Read(./.next/**)",
       "Read(./dist/**)",

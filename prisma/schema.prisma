@@ -101,3 +101,14 @@ model Membership {
   @@unique([workspaceId, userId])
   @@index([userId])
 }
+
+// ─── Rate limits: fixed windows for requests made before sign-in (lib/auth/rate-limit.ts) ───
+
+model RateLimit {
+  /// "ml:e:<hmac>" (email) or "ml:i:<hmac>" (IP): an HMAC, never the raw value
+  key     String   @id
+  count   Int
+  resetAt DateTime
+
+  @@index([resetAt])
+}
