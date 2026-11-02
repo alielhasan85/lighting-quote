@@ -3,7 +3,7 @@
 > Working name: **[TBD]**
 > Owner: Ali
 > Status: Pre-development (idea → MVP)
-> Purpose of this file: single source of truth for the product idea. Claude Code reads this first in every session, together with `CLAUDE.md` and the part docs in `docs/parts/`.
+> Purpose of this file: single source of truth for the product idea: the "why". Active work lives in `.docs/NOW.md`.
 
 ---
 
@@ -67,7 +67,7 @@ Positioning: **the AI quoting and submittal tool built for GCC lighting supplier
 
 ## 4. Product parts (build units)
 
-Each part has its own doc in `docs/parts/` and its own skill for Claude Code sessions.
+Each part gets a TODO in `.docs/todo/` when its work starts, and a reference in `.docs/references/` once built.
 
 ### Part 1 — Global Brand Library (shared)
 - Brands → product families → variants (specs as real columns), datasheets, IES/LDT files, images.
@@ -150,7 +150,7 @@ Each part has its own doc in `docs/parts/` and its own skill for Claude Code ses
 | App | Next.js (App Router) + TypeScript + Tailwind + shadcn/ui |
 | Database | Neon Postgres + Prisma |
 | Vector search | pgvector (inside Neon) |
-| Auth & teams | Clerk (organizations = supplier workspaces, roles) |
+| Auth & teams | Auth.js v5 (Google + email magic link); workspaces, members and roles in our own tables |
 | AI | Claude API (extraction, matching, reasoning, image description) + Voyage embeddings (text + multimodal for image search) |
 | Files | Vercel Blob or Cloudflare R2 |
 | Background jobs | Inngest (BOQ parsing, catalog ingestion, follow-ups) |
@@ -221,13 +221,12 @@ Suppliers are very sensitive about prices, projects and decisions. Rules:
 ## 11. How we build with Claude Code (less vibe coding)
 
 - `CLAUDE.md` (root): project rules — tenant isolation, global vs private data, prices never via AI, human approval before anything is sent, project as central entity, design-for-expansion rules (§2), coding conventions.
-- `docs/roadmap.md`: future modules (sales orders, RFQ/PO, inventory, CRM) — referenced so today's decisions don't block them, but not built until their stage.
-- `docs/architecture.md`, `docs/data-model.md`, `docs/security.md`: shared references.
-- `docs/parts/01-brand-library.md` … `07-crm.md`: one spec per part (goal, user flow, data, APIs, edge cases, acceptance criteria).
-- One **skill per part** loaded at the start of each session working on that part.
-- `docs/decisions/`: short records of key decisions (ADR style).
+- `.docs/NOW.md`: the queue — launch gates and the rows being built. `.docs/todo/LATER.md`: everything deferred, including future modules (sales orders, RFQ/PO, inventory, CRM), so today's decisions don't block them, but they aren't built until their stage.
+- `.docs/guides/`: architecture (where code goes, security and scale rules), workflow, and how references are written.
+- `.docs/todo/<PART>_TODO.md`: one spec per part (goal, user flow, data, edge cases, "Done when"), written when its work starts. Once built, it becomes `.docs/references/<PART>_REFERENCE.md`, which also holds that part's data model.
+- Decisions: the Decisions table in the part's TODO or reference.
 - `tests/fixtures/`: real (anonymized) BOQs, datasheets and expected outputs — the accuracy test set.
-- Each session: pick one part, read its doc + skill, implement against acceptance criteria, update the doc.
+- Each session: `/start-session <row>` reads the NOW.md row, its TODO and reference, and plans; the founder approves; build against "Done when"; `/end-session <row>` verifies and updates the docs.
 
 ## 12. Competitors & differentiation
 

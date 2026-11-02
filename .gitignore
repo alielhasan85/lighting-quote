@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Claude Code: personal settings and notes (shared ones live in .claude/settings.json and CLAUDE.md)
+.claude/settings.local.json
+CLAUDE.local.md
+# Commit message drafted by /end-session, used with `git commit -F .commit-msg.txt`
+.commit-msg.txt

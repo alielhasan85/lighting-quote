@@ -1,0 +1,67 @@
+# .github/workflows/ci.yml
+#
+# CI backstop: runs the repo's checks on pushes to dev/main and on PRs into either. Every step runs
+# even if an earlier one failed, so one red step never hides another; all are skipped only if the
+# install itself failed.
+#
+#   1. typecheck      next typegen && tsc --noEmit. Any error fails.
+#   2. lint           eslint. Every rule is an error.
+#   3. test           vitest
+#   4. check:actions  every 'use server' export goes through an action factory
+#
+# No secrets: nothing here touches the database, and `prisma generate` doesn't need DATABASE_URL.
+
+name: CI
+
+on:
+  push:
+    branches: [dev, main]
+  pull_request:
+    branches: [dev, main]
+  workflow_dispatch:
+
+# A newer push to the same branch cancels the run it supersedes.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      NEXT_TELEMETRY_DISABLED: 1
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Install dependencies
+        id: install
+        run: npm ci
+
+      - name: Type-check
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm run typecheck
+
+      - name: Lint
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm run lint
+
+      - name: Unit tests
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm test
+
+      - name: Server action guard
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm run check:actions

@@ -1,114 +1,124 @@
-# CLAUDE.md
+# lighting-quote — Claude Code Instructions
 
-AI quoting & submittal platform for GCC lighting suppliers (working name: [TBD]).
-Full product idea: `docs/PROJECT_BRIEF.md`. Read it before any new part.
+@AGENTS.md
 
-## How to work in this repo
+**lighting-quote (working name) is an AI quoting & submittal platform for GCC lighting suppliers:** a supplier uploads
+any inquiry, picks from 3–5 matched products per line, and sends a priced quote with its datasheet pack. Multi-tenant
+SaaS: every supplier is a **workspace**, and every workspace's data is isolated. The why:
+[.docs/PROJECT_BRIEF.md](.docs/PROJECT_BRIEF.md).
 
-1. At the start of a session, read this file, then the doc for the part you are working on (`docs/parts/NN-*.md`) and its skill if one exists.
-2. Work on **one part / one task per session**. Do not touch other modules unless the task requires it.
-3. Before coding a non-trivial change: write a short plan (files, schema changes, steps) and wait for approval.
-4. Implement against the **acceptance criteria** in the part doc. If something is unclear or missing, ask — do not guess business rules.
-5. After finishing: run typecheck, lint and tests; update the part doc (status, decisions, open points). Record important decisions in `docs/decisions/`.
-6. Never build future modules (sales orders, purchasing, inventory, CRM) early. Only keep the design ready for them (see "Design for expansion").
-
-## Non-negotiable rules
+## Product rules
 
 ### Data and tenancy
-- Every supplier is a **workspace** (tenant). Every private table has `workspaceId`.
-- Tenant isolation is enforced in the database with **Postgres row-level security**, not only in app code. Never query private tables without the workspace context set.
-- **Global library** (brands, families, variants, datasheets, images — public technical data) is shared and read-only for workspaces.
-- **Private data** (prices, private products, clients, projects, inquiries, quotes, selections, usage history) lives only in workspace tables.
-- **One-way flow:** global → workspace. Nothing from a workspace is ever written into global tables or used for another workspace.
+
+- Every supplier is a **workspace**. Every private table has `workspaceId`, and every query on it filters by it.
+- Isolation is enforced in code today: every page and action names a permission, and every query filters by
+  `workspaceId`. Postgres row-level security is NOW.md row F-4, and lands before a real supplier's prices go in.
+- **Global library** (brands, families, variants, datasheets, images: public technical data) is shared and read-only
+  for workspaces. Only platform admins write it (`createAdminAction`).
+- **Private data** (prices, private products, clients, projects, inquiries, quotes, selections, usage history) lives
+  only in workspace tables.
+- **One-way flow:** global → workspace. Nothing from a workspace is ever written into global tables or used for
+  another workspace.
 - No cross-workspace analytics, aggregates or "market price" features. Ever.
 
-### AI usage
-- AI (Claude API) is used for: extraction, matching/ranking, explanations, image description.
-- **Prices are never computed or seen by AI.** Pricing is deterministic TypeScript code. Do not send price data in any AI prompt.
+### AI
+
+- AI (Claude API) is used for extraction, matching/ranking, explanations and image description.
+- **Prices are never computed or seen by AI.** Pricing is deterministic TypeScript. No price data in any prompt.
 - AI calls receive the minimum data needed. No supplier names, client names or prices in matching prompts.
-- All AI output that becomes data must be validated with a **Zod schema**. Invalid output → retry once → mark for human review.
+- All AI output that becomes data is validated with a zod schema (`lib/ai/schemas/`). Invalid → retry once → mark for
+  human review.
 - Every AI suggestion is editable. Nothing is sent to a client without explicit user approval.
 - Log every AI call (workspace, feature, model, input/output tokens, duration) in `ai_usage_log`.
-- Keep prompts in `server/ai/prompts/` as versioned files, not inline strings.
+- Prompts are versioned files in `lib/ai/prompts/`, not inline strings.
 
 ### Design for expansion
-- **Project** is the central entity: inquiries, quotes (later sales orders, POs, deliveries, follow-ups) belong to a project.
-- Quote lines reference real product variants (global or private), not free text (free text allowed only for "manual / no match" lines).
-- Documents (quote now; later sales order, RFQ, PO) share a common structure: number series, status, lines, revisions, PDF output.
+
+- **Project** is the central entity: inquiries, quotes (later sales orders, POs, deliveries, follow-ups) belong to a
+  project.
+- Quote lines reference real product variants (global or private), not free text (free text only for "manual / no
+  match" lines).
+- Documents (quote now; later sales order, RFQ, PO) share one structure: number series, status, lines, revisions, PDF.
 - Status changes are recorded in an **event log** table.
 - Brands can hold vendor details (contacts, currency, lead time) for future RFQs/POs.
 - Products have optional stock fields (inStock, qty, leadTimeDays).
-- Modules live in their own folders and talk through service functions, not direct cross-module table access.
+- A module is `lib/<module>/` (rules), `lib/queries/<module>.queries.ts`, `lib/actions/<module>.actions.ts` and its
+  routes. A module reads another's data through that module's queries, never its tables.
+- Never build a module from LATER.md (sales orders, purchasing, inventory, CRM) early. Only keep the design ready.
 
-## Tech stack
+### Conventions
 
-- Next.js (App Router) + TypeScript (strict) + Tailwind + shadcn/ui
-- Neon Postgres + Prisma; pgvector for embeddings
-- Clerk (organizations = workspaces, roles: admin, manager, sales)
-- Claude API (`@anthropic-ai/sdk`); Voyage embeddings (text + multimodal)
-- Inngest for background jobs (ingestion, BOQ parsing)
-- Vercel Blob (or R2) for files
-- SheetJS (read Excel), ExcelJS (write Excel), React-PDF (quotes), pdf-lib (merge datasheets)
-- Zod for validation; Vitest for tests; Sentry for errors
-
-## Folder structure
-
-No `src/` directory: code lives at the repo root (same convention as our other projects).
-
-```
-app/                    # routes (UI)
-  (app)/home, projects, quotes, products, clients, price-lists, settings
-modules/                # one folder per module (business logic)
-  library/              # Part 1: global + private product library, ingestion
-  workspace/            # Part 2: workspace settings, brands carried, pricing rules
-  intake/               # Part 3: inquiry upload + extraction
-  matching/             # Part 4: matching, options, image search, usage learning
-  quotes/               # Part 5: quote builder, pricing engine, PDF/Excel
-  submittals/           # Part 6: datasheet pack
-server/
-  db/                   # prisma client, RLS helpers (withWorkspace)
-  ai/                   # Claude + embeddings clients, prompts/, schemas/
-  jobs/                 # Inngest functions
-components/             # shared UI (shadcn)
-lib/                    # utils, units normalization, formatting
-prisma/                 # schema + migrations
-docs/
-  PROJECT_BRIEF.md
-  architecture.md
-  data-model.md
-  security.md
-  roadmap.md
-  parts/01-brand-library.md ... 07-crm.md
-  decisions/
-tests/
-  fixtures/             # anonymized BOQs, datasheets, expected outputs
-```
-
-## Coding conventions
-
-- TypeScript strict, no `any`. Server-only code stays in `server/` or module `server/` files.
-- Server Actions or route handlers validate input with Zod.
-- All DB access to private data goes through `withWorkspace(workspaceId, fn)` (sets RLS context).
 - Units normalized in code (`lib/units.ts`): W, lm, K, IP, IK as numbers; ranges as min/max.
 - Money as integer minor units + currency code. Never floats for money.
-- UI: shadcn components, desktop-first, keyboard-friendly, RTL-ready (use logical CSS: `ms-`, `me-`, `ps-`, `pe-`, `start`, `end`).
-- Small, focused commits with clear messages.
+- UI: shadcn components, desktop-first, keyboard-friendly: engineers work through 100+ lines with arrows and Enter.
+
+---
+
+## Start here
+
+- **[.docs/NOW.md](.docs/NOW.md) decides scope.** On the queue → proceed within its budget. In
+  [LATER.md](.docs/todo/LATER.md) → defer. Neither → ask why now and what drops. Search it; don't read it whole.
+- **`/start-session <row>`** plans a session. **`/end-session <row>`** closes it: the founder runs it after `/clear`,
+  once they've tested.
+- **Read the reference before the code.** [.docs/README.md](.docs/README.md) maps features to references. Grep the
+  headings, then read the Quick Reference and the sections the change touches:
+  [REFERENCES.md](.docs/guides/REFERENCES.md).
+- **Where code goes:** [ARCHITECTURE.md](.docs/guides/ARCHITECTURE.md). **How a session runs:**
+  [WORKFLOW.md](.docs/guides/WORKFLOW.md).
+
+## Hard rules
+
+1. **The founder lands code.** Never `git commit`, `push`, amend or rebase. Draft the commit message only in
+   `/end-session`.
+2. **Plan before code.** Quick lane (≤3 files, no schema, auth, money or personal data): name the files in one line,
+   then build. Everything else: plan mode, and the founder approves first. No Explore or Plan agents where a
+   reference covers the area. Never guess a business rule: ask.
+3. **One deliverable per session,** about 5–30 files, within its row's budget. Found but not fixed → one line in
+   LATER.md, never a new TODO file.
+4. **Security in every plan:** each action names its permission, each query filters by `workspaceId`, each input is
+   parsed with zod ([ARCHITECTURE → Security](.docs/guides/ARCHITECTURE.md)).
+5. **Scale in every plan:** lists paginate, queries select only what's shown and have an index, no query runs in a
+   loop ([ARCHITECTURE → Scale](.docs/guides/ARCHITECTURE.md)).
+6. **Test first for logic.** Prices, permissions, statuses, limits, dates and parsing are proven by a Vitest test,
+   not by looking.
+7. **Verify before saying done:** `typecheck`, `lint`, `test`, `check:actions`, once per task. All must be clean:
+   there is no backlog.
+8. **Docs in the same commit:** TODO → reference → NOW.md, edited in place. Current state only, never a log.
+9. **The UI never touches the database.** Reads in `lib/queries/`, writes as server actions in `lib/actions/` built
+   by a factory (lint and `check:actions` enforce both).
+10. **No `any`,** and no file-wide `eslint-disable`: `// eslint-disable-next-line <rule> -- <why>`.
+11. **Protect data.** Local work uses the Neon dev branch. Never read `.env`. Never run `prisma migrate reset`,
+    `migrate deploy` or `db push`: hand the founder the command.
+12. **Minimal diffs.** No rewrites, and no new dependency without asking.
+13. **Don't run `dev` or `build`** unless asked. Never set `ignoreBuildErrors`.
+
+## Repo map
+
+```
+app/             Routes. Workspace pages under app/(app)/w/[workspaceId]/; one feature's UI lives in its route folder
+components/      Shared UI · components/ui/ = shadcn
+lib/actions/     Writes ('use server', via a factory) · lib/queries/ = reads · lib/<feature>/ = pure rules
+lib/auth/        Permissions, guards, the session reader · auth.ts = Auth.js config
+lib/ai/          Claude + embeddings clients · prompts/ (versioned) · schemas/ (zod for AI output)
+lib/jobs/        Background jobs (Inngest)
+prisma/          Schema and migrations · lib/db.ts = the client
+tests/fixtures/  Anonymized BOQs, datasheets and expected outputs: the accuracy test set
+.docs/           NOW.md, references/, todo/, guides/, PROJECT_BRIEF.md
+```
+
+**Stack:** Next.js 16 (App Router, server actions) · React 19 · TypeScript strict · Prisma 6 + Neon · Auth.js v5 ·
+Tailwind + shadcn/ui · zod · Vitest · Vercel. Added by the row that first needs them: Claude API (`@anthropic-ai/sdk`),
+Voyage embeddings + pgvector, Inngest, Vercel Blob or R2, SheetJS / ExcelJS, React-PDF / pdf-lib, Sentry.
 
 ## Commands
 
+```bash
+npm run typecheck        # next typegen && tsc --noEmit
+npm run lint             # every rule is an error
+npm test                 # vitest
+npm run check:actions    # every 'use server' export goes through a factory
+npx prisma validate      # safe
+npx prisma generate      # safe; after any schema edit
+npx prisma migrate dev --name <name>   # the founder only, against the dev branch
 ```
-npm run dev          # start dev server
-npm run typecheck    # tsc --noEmit
-npm run lint
-npm run test         # vitest
-npx prisma migrate dev
-npx inngest-cli dev  # local background jobs
-```
-
-## Do not
-
-- Do not send prices or client/supplier identity to AI.
-- Do not write supplier data into global tables.
-- Do not add a dependency without stating why.
-- Do not change the Prisma schema without updating `docs/data-model.md`.
-- Do not build modules marked "later" in the roadmap.

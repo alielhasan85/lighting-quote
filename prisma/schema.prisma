@@ -1,0 +1,103 @@
+// prisma/schema.prisma
+// Reference: .docs/references/AUTH_REFERENCE.md. Rules: .claude/rules/database.md
+
+generator client {
+  provider   = "prisma-client-js"
+  // No Rust query engine: the client talks to Neon through the driver adapter in lib/db.ts
+  engineType = "client"
+}
+
+datasource db {
+  provider = "postgresql"
+  // Locally: the Neon dev branch (unpooled URL, so migrations work). In Vercel: production.
+  url      = env("DATABASE_URL")
+}
+
+// ─── Auth.js: field names follow @auth/prisma-adapter ──────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  emailVerified DateTime?
+  image         String?
+  /// "USER" or "ADMIN" (staff of this product). Roles inside a workspace live on Membership.
+  role          String    @default("USER")
+  /// false = suspended: can't sign in, and an existing session can't act
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts    Account[]
+  sessions    Session[]
+  memberships Membership[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expires])
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@id([identifier, token])
+  @@index([expires])
+}
+
+// ─── Workspaces: one per supplier ──────────────────────────────────────────
+
+model Workspace {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  memberships Membership[]
+}
+
+model Membership {
+  id        String   @id @default(cuid())
+  workspaceId  String
+  userId    String
+  /// One of ROLES in lib/auth/permissions.ts. Anything else is refused (isRole).
+  role      String
+  /// false = suspended from this workspace only
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+  @@index([userId])
+}
