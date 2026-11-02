@@ -34,10 +34,8 @@ plan that outgrows it comes back to the founder. A part's TODO is written at its
 Delete a line once it's done.
 
 - [ ] Neon: a dev branch for local work. The production `DATABASE_URL` lives only in Vercel
-- [ ] A Google OAuth client, a Resend key and `AUTH_SECRET` in `.env` and in Vercel
-- [ ] `npx prisma migrate dev --name init`, against the dev branch
-- [ ] `npx prisma migrate dev --name rate_limit`, against the dev branch, after `init` is applied and `prisma/migrations/` is committed
-- [ ] `CRON_SECRET` and `EMAIL_FROM` in `.env` and in Vercel: production refuses to start without every auth variable
+- [ ] Vercel, for Production: `DATABASE_URL`, `AUTH_SECRET`, `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, `AUTH_RESEND_KEY`, `EMAIL_FROM` and `CRON_SECRET`, then redeploy. Vercel → Logs names any that are missing
+- [ ] Before launch: a separate production database, `npx prisma migrate deploy` against it, and every secret rotated, the Google client secret included (it was shared in a chat)
 - [ ] GitHub: create `dev`, and require CI on `dev` and `main`
 - [ ] Brief: edit the mentions of Arabic (§2, §4.1, §9, §12, §13)
 
@@ -47,4 +45,4 @@ Delete a line once it's done.
 - **Found during a session?** If it blocks a gate, the founder decides on a row. Otherwise one line in LATER.md.
 - **On neither?** Ask why now, and what drops to make room.
 
-**Last updated:** 2026-11-02 · F-1 auth hardening built, hand checks open (`.docs/hand-checks/F-1.md`) · next: F-2
+**Last updated:** 2026-11-02 · F-1 auth hardening closed · next: F-2

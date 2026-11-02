@@ -53,11 +53,30 @@ async function consume(
   return rows[0].count <= limit;
 }
 
-/** Counts one magic-link request against its email and its IP. False once either is over. No IP: the email alone. */
+/**
+ * What the IP limit counts. An IPv6 host is handed a whole /64 and can send from any address in it, so the /64 is the
+ * unit. An IPv4-mapped address counts as its IPv4 address. Never throws: clientIp checks characters, not structure.
+ */
+function ipBucket(ip: string): string {
+  if (ip.includes('.')) return ip.slice(ip.lastIndexOf(':') + 1);
+
+  const [head, tail] = ip.toLowerCase().split('::');
+  const before = head ? head.split(':') : [];
+  const after = tail ? tail.split(':') : [];
+  const zeros = tail === undefined ? 0 : Math.max(0, 8 - before.length - after.length);
+  const groups = [...before, ...Array<string>(zeros).fill('0'), ...after];
+  return groups
+    .slice(0, 4)
+    .map((group) => group.replace(/^0+(?=.)/, ''))
+    .join(':');
+}
+
+/**
+ * Counts one magic-link request against its IP, then its email. False once either is over. No IP: the email alone.
+ * In that order on purpose: a request the IP limit refuses doesn't touch the email's count, so one IP can't lock an
+ * address out of sign-in, or add a row for every address it tries.
+ */
 export async function limitMagicLink(email: string, ip: string | null, now = new Date()): Promise<boolean> {
-  const results = await Promise.all([
-    consume(`ml:e:${hmac(email)}`, MAGIC_LINK_LIMITS.email, now),
-    ...(ip ? [consume(`ml:i:${hmac(ip)}`, MAGIC_LINK_LIMITS.ip, now)] : []),
-  ]);
-  return results.every(Boolean);
+  if (ip && !(await consume(`ml:i:${hmac(ipBucket(ip))}`, MAGIC_LINK_LIMITS.ip, now))) return false;
+  return consume(`ml:e:${hmac(email)}`, MAGIC_LINK_LIMITS.email, now);
 }

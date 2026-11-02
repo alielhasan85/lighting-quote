@@ -19,5 +19,7 @@ async function Login({ searchParams }: Pick<PageProps<"/login">, "searchParams">
 
   if (await getCaller()) redirect(target);
 
-  return <LoginClient callbackUrl={target} error={typeof error === "string" ? error : undefined} />;
+  const code = typeof error === "string" ? error : undefined;
+  // Keyed by the code: a redirect back here with a new one must not keep the last attempt's error on screen.
+  return <LoginClient key={code} callbackUrl={target} error={code} />;
 }

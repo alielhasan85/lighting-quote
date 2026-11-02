@@ -1,6 +1,6 @@
 # Auth & Permissions Reference
 
-> **Status:** Built. Not walked live while `.docs/hand-checks/F-1.md` exists · **Related:** [ARCHITECTURE.md → Security](../guides/ARCHITECTURE.md)
+> **Status:** Built and walked by hand · **Related:** [ARCHITECTURE.md → Security](../guides/ARCHITECTURE.md)
 
 Who can sign in, what each role may do in a workspace, and how every page and server action checks it.
 
@@ -15,14 +15,14 @@ app/(auth)/login/check-email/page.tsx pages.verifyRequest: "Check your email"
 app/(auth)/forbidden/page.tsx         Where a refused page goes
 app/api/cron/auth-cleanup/route.ts    Deletes expired Session, VerificationToken and RateLimit rows. Checks CRON_SECRET
 vercel.json                           Runs the cleanup nightly at 03:00 UTC
-instrumentation.ts                    Reports missing auth env at server start: production throws, development warns
+instrumentation.ts                    Reports missing auth env at server start: production throws, development warns. CRON_SECRET only warns
 types/next-auth.d.ts                  session.user.{id, role, isActive}
 lib/auth/caller.ts                    getCaller, getWorkspaceRole: the only code that reads the session or Membership
 lib/auth/permissions.ts               ROLES, Permission, ROLE_PERMISSIONS: the matrix. Client-safe
 lib/auth/authz.ts                     requireSignedIn, requirePlatformAdmin, requireWorkspacePermission, requireWorkspacePermissionPage
 lib/auth/callback-url.ts              LOGIN_PATH, safeCallbackUrl, loginUrl. Pure
 lib/auth/rate-limit.ts                MAGIC_LINK_LIMITS, clientIp, limitMagicLink
-lib/auth/secrets.ts                   REQUIRED_AUTH_ENV, missingAuthEnv, isCronAuthorized. Pure
+lib/auth/secrets.ts                   REQUIRED_AUTH_ENV, missingAuthEnv, missingCleanupEnv, isCronAuthorized. Pure
 lib/actions/auth.actions.ts           signInWithEmail, signInWithGoogle: public, built by createPublicFormAction
 lib/actions/server/run-action.ts      The pipeline: parse → authorize → handler; errors become codes
 lib/actions/server/create-action.ts   createWorkspaceAction, createUserAction, createAdminAction, createPublicFormAction
@@ -34,12 +34,13 @@ prisma/schema.prisma                  User, Account, Session, VerificationToken,
 
 - **Sign-in:** Google, or an email magic link through Resend that expires in 15 minutes. No passwords.
 - **Magic-link limits:** 3 per email per 15 minutes and 10 per IP per hour, in `MAGIC_LINK_LIMITS`. Fixed windows in the
-  `RateLimit` table, keyed by HMAC, so it holds no email or IP. No IP header → the email limit alone.
+  `RateLimit` table, keyed by HMAC, so it holds no email or IP. An IPv6 address counts as its /64. No IP header → the
+  email limit alone.
 - **Sessions:** database rows, 30 days, refreshed daily. The cookie is `__Host-session-token` in production.
 - **Nightly cleanup:** Vercel Cron calls `/api/cron/auth-cleanup`, which deletes expired `Session`, `VerificationToken`
   and `RateLimit` rows.
-- **Env:** `AUTH_SECRET`, `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, `AUTH_RESEND_KEY`, `EMAIL_FROM`, `CRON_SECRET`. Every
-  environment that runs the app needs all six, Vercel Preview included: production refuses to start without them.
+- **Env:** production refuses to start without `AUTH_SECRET`, `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, `AUTH_RESEND_KEY`
+  or `EMAIL_FROM`, Vercel Preview included. Without `CRON_SECRET` it warns, and the cron route refuses every request.
 - **Two kinds of role:** `User.role` is `USER` or `ADMIN` (staff of this product). `Membership.role` is per workspace:
   `OWNER`, `MANAGER` or `SALES`. Only `OWNER` holds `SETTINGS_WRITE` and `MEMBERS_MANAGE`.
 - **Guards name a permission, never a role,** and there is no membership-only guard.
@@ -71,6 +72,7 @@ Action  client → renameThing(raw)
 - Route handlers in `app/api/` guard themselves. The cron route checks `CRON_SECRET` and refuses everything when it's
   unset.
 - Magic links are limited in the `signIn` callback, never in an action, so a direct POST to Auth.js is limited too.
+  The IP is counted first: a request it refuses doesn't touch the email's count.
 - A `callbackUrl` passes through `safeCallbackUrl` before it's used. Auth.js's same-origin `redirect` callback stays as
   the second check.
 - A `Membership.role` outside `ROLES` is refused (`isRole`).
@@ -114,6 +116,7 @@ effect on the next request, because database sessions read the user every time.
 | Workspace isolation in code first; Postgres RLS is NOW.md row F-4 | RLS needs a per-transaction setting on every query and its own tests, so it lands on purpose, before real prices go in |
 | Rate limits in Postgres, not in memory or Redis | Serverless instances share no memory, and Postgres adds no new service. One atomic upsert per key |
 | A refused user returns to `/w/<id>`, not the exact page | A page guard doesn't know its own path. Deep links need a proxy that stamps it |
+| A missing `CRON_SECRET` warns; a missing sign-in variable stops production | Without its secret the cron route refuses everything, so the only loss is a skipped cleanup. That isn't worth taking sign-in down |
 
 ## Known issues
 

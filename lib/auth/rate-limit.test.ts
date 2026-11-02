@@ -42,6 +42,13 @@ async function sendForSameEmail(n: number): Promise<boolean[]> {
   return results;
 }
 
+/** The key one request from `ip` counts against. */
+async function ipKey(ip: string): Promise<string> {
+  keys = [];
+  await limitMagicLink(EMAIL, ip);
+  return keys[0];
+}
+
 describe('MAGIC_LINK_LIMITS', () => {
   it('holds the numbers the founder decided', () => {
     expect(MAGIC_LINK_LIMITS.email).toEqual({ limit: 3, windowMs: 15 * 60 * 1000 });
@@ -70,8 +77,8 @@ describe('limitMagicLink', () => {
   it('stores neither the raw email nor the raw IP', async () => {
     await limitMagicLink(EMAIL, IP);
     expect(keys).toHaveLength(2);
-    expect(keys[0]).toMatch(/^ml:e:[0-9a-f]{64}$/);
-    expect(keys[1]).toMatch(/^ml:i:[0-9a-f]{64}$/);
+    expect(keys[0]).toMatch(/^ml:i:[0-9a-f]{64}$/);
+    expect(keys[1]).toMatch(/^ml:e:[0-9a-f]{64}$/);
     for (const key of keys) {
       expect(key).not.toContain(EMAIL);
       expect(key).not.toContain('buyer');
@@ -91,9 +98,40 @@ describe('limitMagicLink', () => {
     const now = new Date('2026-11-02T10:00:00.000Z');
     await limitMagicLink(EMAIL, IP, now);
     const values = vi.mocked(prisma.$queryRaw).mock.calls.map((call) => call.slice(1));
-    expect(values[0]).toContainEqual(new Date(now.getTime() + MAGIC_LINK_LIMITS.email.windowMs));
-    expect(values[1]).toContainEqual(new Date(now.getTime() + MAGIC_LINK_LIMITS.ip.windowMs));
+    expect(values[0]).toContainEqual(new Date(now.getTime() + MAGIC_LINK_LIMITS.ip.windowMs));
+    expect(values[1]).toContainEqual(new Date(now.getTime() + MAGIC_LINK_LIMITS.email.windowMs));
     expect(values[0]).toContainEqual(now);
+  });
+
+  // Otherwise one IP could lock any address out of sign-in, and add a row for every address it tries.
+  it('stops counting against the email once the IP is over its limit', async () => {
+    await sendFromSameIp(MAGIC_LINK_LIMITS.ip.limit);
+    keys = [];
+    for (let i = 0; i < 5; i++) expect(await limitMagicLink(EMAIL, IP)).toBe(false);
+    expect(keys.every((key) => key.startsWith('ml:i:'))).toBe(true);
+    expect(await limitMagicLink(EMAIL, '198.51.100.1')).toBe(true);
+  });
+
+  // One host is handed a whole /64, so counting single addresses would never reach the limit.
+  it('counts a whole IPv6 /64 as one IP', async () => {
+    const results: boolean[] = [];
+    for (let i = 0; i < 11; i++) {
+      results.push(await limitMagicLink(`user${i}@example.com`, `2001:db8:1:2::${i.toString(16)}`));
+    }
+    expect(results[9]).toBe(true);
+    expect(results[10]).toBe(false);
+  });
+
+  it('gives every spelling of a /64 one key, and another /64 another key', async () => {
+    const same = await ipKey('2001:db8:1:2::a');
+    expect(await ipKey('2001:0db8:0001:0002:0:0:0:b')).toBe(same);
+    expect(await ipKey('2001:DB8:1:2:ffff::1')).toBe(same);
+    expect(await ipKey('2001:db8:1:3::a')).not.toBe(same);
+  });
+
+  it('counts an IPv4-mapped address as that IPv4 address', async () => {
+    expect(await ipKey('::ffff:203.0.113.7')).toBe(await ipKey('203.0.113.7'));
+    expect(await ipKey('::ffff:203.0.113.8')).not.toBe(await ipKey('203.0.113.7'));
   });
 
   it('refuses rather than sends when AUTH_SECRET is missing', async () => {

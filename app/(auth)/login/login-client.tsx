@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldGroup, FieldLabel, FieldSeparator } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -10,11 +10,12 @@ import { signInWithEmail, signInWithGoogle } from "@/lib/actions/auth.actions";
 const MESSAGES = new Map([
   ["RateLimited", "Too many sign-in links. Try again in 15 minutes."],
   ["AccessDenied", "This account can't sign in. Contact your workspace owner."],
+  ["ACCESS_DENIED", "This account can't sign in. Contact your workspace owner."],
   ["Verification", "That sign-in link has expired or was already used. Request a new one."],
   ["OAuthAccountNotLinked", "This email signs in with an email link. Use the email option above."],
   ["INVALID_INPUT", "Enter a valid email address."],
 ]);
-const DEFAULT_MESSAGE = "Sign-in failed. Try again.";
+const messageFor = (code: string) => MESSAGES.get(code) ?? "Sign-in failed. Try again.";
 
 type LoginClientProps = {
   /** Already passed through safeCallbackUrl. The action checks it again: a form field can be anything. */
@@ -24,14 +25,15 @@ type LoginClientProps = {
 };
 
 export function LoginClient({ callbackUrl, error }: LoginClientProps) {
+  // Controlled: React resets an uncontrolled form after its action, which would wipe the address on a failure.
+  const [email, setEmail] = useState("");
   const [emailState, emailAction, emailPending] = useActionState(signInWithEmail, null);
   const [googleState, googleAction, googlePending] = useActionState(signInWithGoogle, null);
   const pending = emailPending || googlePending;
 
-  // The latest attempt on this page wins over the code the page arrived with.
-  const failed = [emailState, googleState].find((state) => state?.success === false);
-  const code = failed?.success === false ? failed.error : error;
-  const message = code ? (MESSAGES.get(code) ?? DEFAULT_MESSAGE) : undefined;
+  // Each form shows its own failure. The code the page arrived with sits under the email form, the first option.
+  const emailCode = emailState?.success === false ? emailState.error : error;
+  const googleCode = googleState?.success === false ? googleState.error : undefined;
 
   return (
     <FieldGroup>
@@ -49,6 +51,8 @@ export function LoginClient({ callbackUrl, error }: LoginClientProps) {
               maxLength={254}
               required
               autoFocus
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
             />
           </Field>
           <Field>
@@ -56,13 +60,14 @@ export function LoginClient({ callbackUrl, error }: LoginClientProps) {
               Send sign-in link
             </Button>
           </Field>
-          <FieldError>{message}</FieldError>
+          <FieldError>{emailCode && messageFor(emailCode)}</FieldError>
         </FieldGroup>
       </form>
       <FieldSeparator>Or</FieldSeparator>
       <form action={googleAction}>
         <input type="hidden" name="callbackUrl" value={callbackUrl} />
         <Field>
+          <FieldError>{googleCode && messageFor(googleCode)}</FieldError>
           <Button variant="outline" type="submit" disabled={pending}>
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
               <path

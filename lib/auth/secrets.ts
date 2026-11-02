@@ -5,19 +5,27 @@
  */
 import { createHash, timingSafeEqual } from 'node:crypto';
 
-/** Checked at server start (instrumentation.ts). Each one unset breaks sign-in or the cleanup job only when it's used. */
+type Env = Record<string, string | undefined>;
+
+/** Sign-in can't work without these, so production refuses to start without them (instrumentation.ts). */
 export const REQUIRED_AUTH_ENV = [
   'AUTH_SECRET',
   'AUTH_GOOGLE_ID',
   'AUTH_GOOGLE_SECRET',
   'AUTH_RESEND_KEY',
   'EMAIL_FROM',
-  'CRON_SECRET',
 ] as const;
 
+const unset = (names: readonly string[], env: Env) => names.filter((name) => !env[name]?.trim());
+
 /** The required variables that are unset or blank. */
-export function missingAuthEnv(env: Record<string, string | undefined>): string[] {
-  return REQUIRED_AUTH_ENV.filter((name) => !env[name]?.trim());
+export function missingAuthEnv(env: Env): string[] {
+  return unset(REQUIRED_AUTH_ENV, env);
+}
+
+/** What the nightly cleanup needs. Only a warning: without it the cron route refuses everything, and sign-in is fine. */
+export function missingCleanupEnv(env: Env): string[] {
+  return unset(['CRON_SECRET'], env);
 }
 
 const digest = (value: string) => createHash('sha256').update(value).digest();

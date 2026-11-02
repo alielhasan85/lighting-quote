@@ -22,7 +22,8 @@ export const signInWithEmail = createPublicFormAction(
     try {
       return await signIn('resend', { email, redirectTo: safeCallbackUrl(callbackUrl) });
     } catch (e) {
-      if (e instanceof AuthError) throw new ActionError('SIGN_IN_FAILED');
+      // AccessDenied: the signIn callback refused a suspended account.
+      if (e instanceof AuthError) throw new ActionError(e.type === 'AccessDenied' ? 'ACCESS_DENIED' : 'SIGN_IN_FAILED');
       throw e;
     }
   },

@@ -2,7 +2,7 @@
 // The cron route's only guard, and the startup check that names a missing variable.
 
 import { describe, expect, it } from 'vitest';
-import { isCronAuthorized, missingAuthEnv, REQUIRED_AUTH_ENV } from './secrets';
+import { isCronAuthorized, missingAuthEnv, missingCleanupEnv, REQUIRED_AUTH_ENV } from './secrets';
 
 describe('isCronAuthorized', () => {
   it('accepts only Bearer <secret>', () => {
@@ -38,17 +38,33 @@ describe('missingAuthEnv', () => {
   });
 
   it('names every unset or blank variable', () => {
-    expect(missingAuthEnv({ ...allSet, EMAIL_FROM: undefined, CRON_SECRET: '   ', AUTH_SECRET: '' })).toEqual([
+    expect(missingAuthEnv({ ...allSet, EMAIL_FROM: undefined, AUTH_GOOGLE_SECRET: '   ', AUTH_SECRET: '' })).toEqual([
       'AUTH_SECRET',
+      'AUTH_GOOGLE_SECRET',
       'EMAIL_FROM',
-      'CRON_SECRET',
     ]);
     expect(missingAuthEnv({})).toEqual([...REQUIRED_AUTH_ENV]);
   });
 
-  it('covers what sign-in and the cleanup job need', () => {
+  it('covers what sign-in needs', () => {
     expect([...REQUIRED_AUTH_ENV].sort()).toEqual(
-      ['AUTH_GOOGLE_ID', 'AUTH_GOOGLE_SECRET', 'AUTH_RESEND_KEY', 'AUTH_SECRET', 'CRON_SECRET', 'EMAIL_FROM'].sort(),
+      ['AUTH_GOOGLE_ID', 'AUTH_GOOGLE_SECRET', 'AUTH_RESEND_KEY', 'AUTH_SECRET', 'EMAIL_FROM'].sort(),
     );
+  });
+
+  // A skipped cleanup must not take sign-in down: the cron route already refuses everything without its secret.
+  it('never stops the server over CRON_SECRET', () => {
+    expect(missingAuthEnv({ ...allSet, CRON_SECRET: undefined })).toEqual([]);
+  });
+});
+
+describe('missingCleanupEnv', () => {
+  it('names CRON_SECRET when it is unset or blank', () => {
+    expect(missingCleanupEnv({})).toEqual(['CRON_SECRET']);
+    expect(missingCleanupEnv({ CRON_SECRET: '   ' })).toEqual(['CRON_SECRET']);
+  });
+
+  it('returns nothing when it is set', () => {
+    expect(missingCleanupEnv({ CRON_SECRET: 's3cret' })).toEqual([]);
   });
 });
