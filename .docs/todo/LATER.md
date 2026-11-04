@@ -6,9 +6,26 @@ doesn't block a gate adds one line here; it never starts a new TODO file without
 - Part 2 in full: price-list upload with AI column mapping, discount rules, landed-cost formulas, price-list versions (brief §6, §10.10)
 - Team invites: email invite, accept flow, the `MANAGER` and `SALES` roles in use (was in F-2). Until then, G2's roles walk uses `Membership` rows added by SQL, and `/forbidden`'s "ask a workspace owner to invite you" promises something that doesn't exist yet
 - Wording from before the roadmap: the brief says "supplier" where it means any company (§4 Part 2, §6, §7, §8, §13), and so does the `Workspace` comment in `prisma/schema.prisma`
-- Private company products, through the same pipeline as P-1 (brief §4, Part 2)
-- Open sign-up: once P-3 exists, anyone who signs in gets a workspace and can spend AI credits. One workspace per account caps each account, not how many accounts someone makes. Decide invite-only or a per-workspace AI limit before P-3 reaches production
-- Brief features on no list yet: Excel quote output, usage learning and favorites (Part 4), Ctrl+K search, Home pipeline, the clickable design test (§4.1), IES/LDT files (Part 1)
+- Open sign-up: once P-3 or W-1 exists, anyone who signs in gets a workspace and can spend AI credits. One workspace per account caps each account, not how many accounts someone makes. Decide invite-only or a per-workspace AI limit before P-3 or W-1 reaches production
+- Brief features on no list yet: Excel quote output, usage learning and favorites (Part 4), Ctrl+K search, Home pipeline, the clickable design test (§4.1)
+- Search by similar image and by description: Voyage embeddings per family + pgvector, with product photos and drawing crops captured from the pages (`sharp` + a page renderer, asked then). Figure boxes are already in the extraction schema ([library TODO](PRODUCT_LIBRARY_TODO.md) D10, D19, Open decisions 7)
+- Internet discovery: official manufacturer sites only (from `Brand.website`), robots.txt and site terms respected, shown apart from uploaded results, never PASS without a stored document. A found document becomes global only through the admin (library TODO, Open decisions 8)
+- Product page links as a source: a safe fetch with an SSRF guard, a linked datasheet PDF imported as a PDF. Pages built by JavaScript need a headless browser
+- No-match fallback: when structured search finds nothing for a line, AI reads only that line's full-text hit pages, shown apart, nothing stored
+- Brand profiles (library TODO D21): a versioned row of brand rules, examples and order-code key, only if the golden set shows brand-specific errors a profile fixes
+- "Newer data available" on stored options and quote lines when a catalogue version or a re-extraction changes their product, with a diff. A re-extraction of a verified family becomes a diff the admin accepts
+- Workspace corrections to global families: a private copy-on-write per family, shown instead of the original in that workspace's search (library TODO D17)
+- AI ranking and explanations of candidates, with no prices (brief Part 4)
+- An explicit "report a problem" on a global value: opt-in, carrying only the family, field and note, never counted or ranked
+- Batches API at half price for bulk catalogue loads, once the first catalogues have run on the standard API
+- IES/LDT files linked from datasheets: store them, and cross-check lumens and beam in code (brief Part 1)
+- Import brands' structured data (ETIM/BMEcat, GLDF, Excel) by code, with no AI, into the same library tables. The taxonomy's ETIM ids (library TODO D35) make it a mapping
+- Brand portal: a workspace of kind BRAND linked to its Brand, a `createBrandAction` that checks the row's `brandId`, brands claiming their families (library TODO D31), brand documents through the same pipeline, values a brand types in shown as "declared by the brand", paid placement in a labelled slot, the markets a brand sells in. Its rules come first (library TODO, Open decisions 15–16)
+- An external search engine (Typesense, Meilisearch, OpenSearch) fed from the search rows, only if stage 1 misses its p95 target on real data (library TODO D32, Open decisions 14)
+- Postgres partitions by brand, only if a brand's full re-load becomes slow or bloats the tables (library TODO D36)
+- Per-client and per-consultant preferences: overlay rows keyed by workspace, client and family, read in the workspace-preferences rank step (brief Part 4)
+- A second, independent extraction pass to compare, only if the golden set shows a need
+- Evidence opens the whole PDF (5–50 MB): if that's slow, store each family's cut pages and open those
 - Part 7: follow-up and CRM, quote status pipeline, reminders, drafted follow-up emails (brief §4)
 - Email inbox intake (brief §9 Out)
 - Sales orders, purchase orders, inventory, deliveries (brief §2): keep the design ready, don't build

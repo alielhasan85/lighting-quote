@@ -68,4 +68,22 @@ findings in this deliverable; file the rest as in §3.5.
    ```
 
    Hand over `git commit -F .commit-msg.txt`, never `-m`: PowerShell 5.1 splits a `-m` message on its double quotes.
-4. **Remind:** open the PR into `dev`, and merge only when CI is green.
+4. **Remind:** show these commands with the branch filled in (the row in lowercase, `a-1`). The founder runs them. No
+   local `git merge` into `dev`: it skips the PR.
+
+   ```powershell
+   git push -u origin <branch>
+   gh pr create --base dev --fill
+   ```
+
+   Using the link from the push output instead of `gh`: set the base to `dev`, because GitHub usually preselects `main`.
+   Merge only when CI is green, with **Squash and merge**. Then:
+
+   ```powershell
+   git switch dev
+   git pull
+   git branch -D <branch>
+   git push origin --delete <branch>
+   ```
+
+   `-D`, not `-d`: git never counts a squashed branch as merged. Skip the last line if the branch was deleted on GitHub.

@@ -1,0 +1,121 @@
+{
+  "family": {
+    "name": "CAVE 03",
+    "familyCode": null,
+    "brandName": "JISO",
+    "collection": null,
+    "description": "A 3 W mini recessed downlight with a 30 mm cut-out, in three colour temperatures and three finishes.",
+    "fixtureType": "DOWNLIGHT",
+    "mounting": "RECESSED",
+    "applications": [],
+    "material": null,
+    "diffuserMaterial": null,
+    "orderCodeTemplate": "7IA53603-21J_-__"
+  },
+  "specs": {
+    "watts": { "raw": "3W", "page": 1, "source": "TEXT" },
+    "cct": null,
+    "beamAngle": null,
+    "ipFront": { "raw": "Ext 44", "page": 1, "source": "TEXT" },
+    "ipRear": { "raw": "Int 20", "page": 1, "source": "TEXT" },
+    "ik": null,
+    "cri": { "raw": ">80", "page": 1, "source": "ICON" },
+    "ugr": { "raw": "<19", "page": 1, "source": "ICON" },
+    "electricalClass": { "raw": "Class II", "page": 1, "source": "ICON" },
+    "cutOut": { "raw": "Ø30", "page": 1, "source": "DRAWING" },
+    "diameter": { "raw": "35", "page": 1, "source": "DRAWING" },
+    "height": { "raw": "35", "page": 1, "source": "DRAWING" },
+    "length": null,
+    "width": null,
+    "lifetime": { "raw": "100.000 h", "page": 1, "source": "TEXT" },
+    "lifetimeRating": null,
+    "ta": null,
+    "weight": { "raw": "0,05 Kg", "page": 1, "source": "TEXT" },
+    "warranty": { "raw": "5 years", "page": 1, "source": "ICON" },
+    "energyClass": null,
+    "voltage": null,
+    "powerFactor": null,
+    "dimming": null,
+    "flickerFree": null,
+    "ledChipBrand": { "raw": "Bridgelux", "page": 1, "source": "TEXT" }
+  },
+  "axes": [
+    {
+      "axis": "CCT",
+      "values": [
+        { "code": null, "label": "2700K", "raw": "2700K", "page": 1 },
+        { "code": null, "label": "3000K", "raw": "3000K", "page": 1 },
+        { "code": null, "label": "4000K", "raw": "4000K", "page": 1 }
+      ]
+    },
+    {
+      "axis": "FINISH",
+      "values": [
+        { "code": "01", "label": "Black", "raw": "01 Negro / Black / Noir", "page": 2 },
+        { "code": "09", "label": "Gold", "raw": "09 Oro / Gold / Or", "page": 2 },
+        { "code": "90", "label": "White", "raw": "90 Blanco / White / Blanc", "page": 2 }
+      ]
+    }
+  ],
+  "performance": [
+    {
+      "key": [{ "axis": "CCT", "raw": "2700K" }],
+      "specs": {
+        "lumensDelivered": { "raw": "194", "page": 1, "source": "TABLE" },
+        "lumensChip": { "raw": "268", "page": 1, "source": "TABLE" },
+        "watts": null,
+        "beamAngle": null,
+        "length": null,
+        "width": null,
+        "height": null,
+        "diameter": null,
+        "cutOut": null,
+        "weight": null
+      }
+    },
+    {
+      "key": [{ "axis": "CCT", "raw": "3000K" }],
+      "specs": {
+        "lumensDelivered": { "raw": "204", "page": 1, "source": "TABLE" },
+        "lumensChip": { "raw": "286", "page": 1, "source": "TABLE" },
+        "watts": null,
+        "beamAngle": null,
+        "length": null,
+        "width": null,
+        "height": null,
+        "diameter": null,
+        "cutOut": null,
+        "weight": null
+      }
+    },
+    {
+      "key": [{ "axis": "CCT", "raw": "4000K" }],
+      "specs": {
+        "lumensDelivered": { "raw": "215", "page": 1, "source": "TABLE" },
+        "lumensChip": { "raw": "286", "page": 1, "source": "TABLE" },
+        "watts": null,
+        "beamAngle": null,
+        "length": null,
+        "width": null,
+        "height": null,
+        "diameter": null,
+        "cutOut": null,
+        "weight": null
+      }
+    }
+  ],
+  "orderCodes": [],
+  "letterMap": [],
+  "figures": [
+    { "kind": "PRODUCT_PHOTO", "page": 1, "box": { "x": 0.06, "y": 0.12, "w": 0.38, "h": 0.3 }, "finishCode": null, "caption": null },
+    { "kind": "DRAWING", "page": 1, "box": { "x": 0.55, "y": 0.12, "w": 0.38, "h": 0.25 }, "finishCode": null, "caption": null },
+    { "kind": "FINISH_PHOTO", "page": 2, "box": { "x": 0.06, "y": 0.2, "w": 0.25, "h": 0.2 }, "finishCode": "01", "caption": "01 Negro / Black / Noir" },
+    { "kind": "FINISH_PHOTO", "page": 2, "box": { "x": 0.37, "y": 0.2, "w": 0.25, "h": 0.2 }, "finishCode": "09", "caption": "09 Oro / Gold / Or" },
+    { "kind": "FINISH_PHOTO", "page": 2, "box": { "x": 0.68, "y": 0.2, "w": 0.25, "h": 0.2 }, "finishCode": "90", "caption": "90 Blanco / White / Blanc" }
+  ],
+  "otherSpecs": [
+    { "label": "Chip efficacy", "raw": "89 lm/W (2K), 95 lm/W", "page": 1 },
+    { "label": "Switching cycles", "raw": "15.000", "page": 1 }
+  ],
+  "notes": []
+}

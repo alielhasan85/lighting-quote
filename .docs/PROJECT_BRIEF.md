@@ -2,7 +2,7 @@
 
 > Working name: **[TBD]**
 > Owner: Ali
-> Status: In development: auth foundation built, product library next
+> Status: In development: auth and app shell built, catalogue discovery next
 > Purpose of this file: single source of truth for the product idea: the "why". Active work lives in `.docs/NOW.md`.
 
 ---
@@ -30,7 +30,7 @@ This takes hours to days per project, depends on a few experienced people, and s
 A web app where a contractor or supplier uploads **any RFQ or specification**, and the platform:
 
 - extracts the line items and required specs, which the user confirms one by one,
-- proposes **3–5 matching product options per line** from the product library, favoring the company's preferred brands,
+- proposes **3–5 matching product options per line** from the uploaded catalogues, each value tied to its page, favoring the company's preferred brands,
 - lets the user **just pick**, and keeps the other options ready when a client rejects a product,
 - prepares **RFQs to the brands** for the selected products,
 - prices the quote deterministically from the prices brands send back,
@@ -45,7 +45,7 @@ We **start** with one thing done very well: fast, straightforward AI quoting. Ov
 |---|---|
 | Now (MVP) | Product library and search, AI quoting with RFQs to brands and client revisions, datasheet/submittal pack |
 | Next | Projects & CRM follow-up, quote → sales order |
-| Later | Purchase orders to brands, inventory & stock check, deliveries, simple reporting |
+| Later | Purchase orders to brands, inventory & stock check, deliveries, simple reporting. A brand portal: brands manage their own library data and paid placement (rules to decide: library TODO, Open decisions 15–16) |
 | Optional | Integrations (Odoo, Zoho, accounting) instead of rebuilding them |
 
 **Rule: build simple now, design for expansion from day one.** We do not build these modules early, but the foundation must not block them:
@@ -71,10 +71,11 @@ Positioning: **the AI quoting and submittal tool built for lighting projects** �
 Each part gets a TODO in `.docs/todo/` when its work starts, and a reference in `.docs/references/` once built.
 
 ### Part 1 — Global Brand Library (shared)
-- Brands → product families → variants (common specs as real columns, the rest in a flexible field, because street, tunnel and decorative products differ), datasheets, IES/LDT files, images.
-- Built once, shared by all suppliers, updated over time (new products, discontinued items, datasheet versions).
-- Ingestion pipeline: source (PDF catalog, datasheet, Excel) → split per family → AI extraction into a fixed JSON schema → unit normalization in code → **human review screen** → save + embed.
-- Contains **public technical data only**. Never prices, never supplier data.
+- Brands → catalogues → document versions → pages, and from them product families → variants (common specs as real columns, the rest in a flexible field, because street, tunnel and decorative products differ). Later: IES/LDT files, images.
+- Built once, shared by all suppliers, updated over time: a new catalogue or datasheet version supersedes the old one and never overwrites it.
+- Pipeline: the platform admin uploads a PDF catalogue or datasheet → code reads every page and holds price and scanned pages back from AI → a family map (page ranges, type, headline specs) → every family extracted into a fixed JSON schema, each value with its page and printed text → unit normalization in code → **searchable at once, labelled unverified** → a person verifies it beside its page.
+- Contains **public technical data from publicly available documents only**, with each document's source recorded. Never prices, never supplier data.
+- One library, owned per brand. Each family has a stable identity across datasheets, catalogues and editions, so it shows once in search, and a company's links to it survive a new version. Designed for hundreds of brands and millions of variants.
 
 ### Part 2 — Supplier Workspace (private)
 - Brands the company prefers (selected from the global library). A preference, not a hard filter: contractors look across brands.
@@ -82,7 +83,8 @@ Each part gets a TODO in `.docs/todo/` when its work starts, and a reference in 
 - Prices and pricing rules (see §6).
 - Default matching criteria: preferred brands, stock items, lead times, budget/premium preference.
 - Users, roles, company branding for quotes.
-- **Add products anytime:** users upload a datasheet (or enter a product manually) and it goes through the same extraction + review flow into their private library. Library grows continuously.
+- **Own catalogues and items:** a company uploads its own catalogues in bulk, or adds one datasheet, photo or typed product for a line and is asked whether to save it to its products. They go through the same pipeline under the workspace's scope: private, never global, never used for another workspace. When this arrives is still to decide (library TODO).
+- **The database grows with use:** a product becomes the company's when it's selected, quoted or saved. Its codes, prices, preferences and suppliers stay private, as links to the product, not copies.
 - Request a new brand for the global library: only public technical data is added, by explicit request — never their prices or usage.
 
 ### Part 3 — Inquiry Intake & Extraction
@@ -93,10 +95,10 @@ Each part gets a TODO in `.docs/todo/` when its work starts, and a reference in 
 
 ### Part 4 — Search, Matching & Options
 - Search and matching are one engine: users can search the library directly, and each RFQ line calls the same search.
-- Per line: hard filters in SQL (type, IP ≥, wattage/lumen range, CCT) → vector search for soft criteria → AI ranks top candidates and explains.
+- Per line: an indexed search over one row per family (class, mounting, wattage/lumen range), with full-text and code search, narrows to the best ≈ 100–200 families → deterministic compliance per criterion on their variants: PASS, FAIL or UNKNOWN, each with its value, its page and whether a person checked it → ranking in named steps: the technical match first, then the company's own preferences. A later sponsored slot is shown apart and never changes compliance. AI never invents a value and never declares compliance. Later: vector search for soft criteria, and AI ranking and explanations (never with prices).
 - Show 3–5 options side by side with key specs and compliance flags (e.g. "IK08 required, option has IK07").
 - User selects one option per line (or marks "no match / manual"). All options stay stored, so a client's rejection means picking the next option or searching again, not starting over.
-- **Search by image:** user uploads a photo/render/screenshot of a fitting → the app finds the same or visually similar products in the library (shape, finish, style), combined with spec filters (W, CCT, IP).
+- **Search by image** (after the MVP unless the pilot's RFQs need it: to decide): user uploads a photo/render/screenshot of a fitting → the app finds the same or visually similar products in the library (shape, finish, style), combined with spec filters (W, CCT, IP).
   - How: product images in the library get image embeddings (multimodal embeddings in pgvector); the query image is embedded and compared. Claude vision also describes the item (type, shape, material, mounting) to refine the search with text and specs.
   - Requires product images to be stored during ingestion (Part 1 / Part 2).
   - Works best for decorative items; technical items still rely mainly on specs.
@@ -114,10 +116,11 @@ Each part gets a TODO in `.docs/todo/` when its work starts, and a reference in 
 - Applies pricing (§6), per-project overrides, terms, validity, currency, VAT.
 - Outputs branded PDF and Excel quotation.
 - Quote versions (rev A, rev B…), each with its own selections, because clients change things.
+- Each quote line keeps a snapshot of its product: specs, document version and page. A new catalogue or a re-extraction never changes a sent quote.
 
 ### Part 6 — Datasheet & Submittal Pack
 - Collects datasheets of selected products in quote order.
-- Cover page, index, optional compliance table, merged into one PDF.
+- Cover page, index, optional compliance table, merged into one PDF. The compliance table says "complies" only for values a person checked (to decide).
 - Later: templates per consultant/authority format.
 
 ### Part 7 — Follow-up & CRM (later)
@@ -138,7 +141,7 @@ Each part gets a TODO in `.docs/todo/` when its work starts, and a reference in 
   4. **Brand RFQs** — selected products grouped by brand; the prices they send back are entered here.
   5. **Quote** — pricing, overrides, terms, preview, PDF/Excel export, revisions.
   6. **Submittal** — datasheet pack builder and preview.
-- **Products:** global library + private library, search by text, specs, or image; add product from datasheet.
+- **Products:** global library + private library, search by specs and text (image later), open the catalogue page behind any value, add a catalogue or a datasheet.
 - **Price lists (later):** upload, discount rules, landed-cost formulas, versions.
 
 **UX rules (fixed from the start):**
@@ -155,13 +158,13 @@ Each part gets a TODO in `.docs/todo/` when its work starts, and a reference in 
 |---|---|
 | App | Next.js (App Router) + TypeScript + Tailwind + shadcn/ui |
 | Database | Neon Postgres + Prisma |
-| Vector search | pgvector (inside Neon) |
+| Search | Postgres full-text search now; pgvector (inside Neon) later |
 | Auth & teams | Auth.js v5 (Google + email magic link); workspaces, members and roles in our own tables |
-| AI | Claude API (extraction, matching, reasoning, image description) + Voyage embeddings (text + multimodal for image search) |
-| Files | Vercel Blob (private store) |
+| AI | Claude API (extraction, matching, reasoning, image description); later Voyage embeddings (text + multimodal for image search) |
+| Files | Vercel Blob (private store) recommended, or Cloudflare R2: to decide |
 | Background jobs | Inngest (RFQ parsing, catalog ingestion, follow-ups) |
 | Excel | SheetJS (read) / ExcelJS (write) |
-| PDF | React-PDF (quotes), pdf-lib (merging submittal packs) |
+| PDF | unpdf (reading catalogues), pdf-lib (cutting family pages, merging submittal packs), React-PDF (quotes) |
 | Email intake (later) | Postmark or Resend inbound |
 | Payments | Stripe (or Paddle / Lemon Squeezy) |
 | Hosting | Vercel |
@@ -189,6 +192,8 @@ Suppliers are very sensitive about prices, projects and decisions. Rules:
 - **One-way data flow:** global library → supplier. Nothing from a supplier (prices, projects, clients, selections) flows back into shared data.
 - **No cross-supplier analytics**, ever (no "market price" or "what others quoted").
 - AI calls receive only what they need — matching never receives prices.
+- **Price pages in uploaded documents** are detected by code and never sent to AI; a page in doubt is held until a person looks at it.
+- **Supplier activity never changes shared data:** searches, selections and uploads never write to the global library or change what it extracts, verifies or ranks.
 - Operator (us) has **no default access** to supplier commercial data; support access only when granted, time-limited and logged.
 - Audit log (who viewed/exported what), 2FA, encryption at rest and in transit.
 - Full data export and permanent deletion on request.
@@ -205,15 +210,16 @@ Suppliers are very sensitive about prices, projects and decisions. Rules:
 ## 9. MVP scope
 
 **In:**
-- Part 1 from PDF datasheets and catalogs, with a review screen, covering the brands and families the test RFQs need.
-- Search by specs, description and similar image.
+- Part 1: PDF catalogues and datasheets uploaded by the platform admin, searchable at once as unverified candidates with the page behind every value, verified beside the page; covering the brands and families the test RFQs need.
+- Search by specs and text, with PASS/FAIL/UNKNOWN per criterion. Similar image: to decide, on the pilot's RFQs.
+- A company's own catalogues and single items: to decide, before or just after launch.
 - Part 3 with any RFQ (Excel, PDF, pasted text, image), confirmed line by line.
 - Part 4 matching with options and user selection.
 - Part 5: RFQs to brands, prices from brand replies, PDF quote, client revisions.
 - Part 6 merged datasheet pack.
 - Single workspace, but data model already multi-tenant.
 
-**Out (later):** email inbox intake, team invites, private company products, price lists and discount rules, CRM, ERP sync, Arabic UI, billing, dedicated deployments.
+**Out (later):** email inbox intake, team invites, price lists and discount rules, CRM, ERP sync, Arabic UI, billing, dedicated deployments, internet discovery of manufacturer documents.
 
 **MVP success test:** on 10–20 real past RFQs, the system matches ≥ 80% of lines correctly (or flags them), and our part of the work takes under 15 minutes. The time brands take to reply doesn't count.
 
@@ -221,14 +227,14 @@ Suppliers are very sensitive about prices, projects and decisions. Rules:
 
 1. Foundation: repo, auth, roles (built).
 2. App shell: sidebar layout, tabs, workspace on first sign-in.
-3. Part 1: product library schema + ingestion pipeline + review screen.
-4. Search: by specs, description and similar image.
+3. Part 1: catalogue reader and family map, family extraction with page evidence, upload and background processing.
+4. Discovery: search by specs and text with PASS/FAIL/UNKNOWN per criterion; then verify beside the page.
 5. Private data: RLS.
 6. Part 3: RFQ intake + line-by-line confirmation.
-7. Part 4: matching on the search engine + options UI.
+7. Part 4: matching on the search engine + options UI; then a company's own catalogues and single items (timing to decide).
 8. Part 5 + 6: RFQs to brands, brand prices, quote PDF, revisions, datasheet pack.
 9. Launch with the first real user → fix → measure.
-10. Part 2 full (invites, private products, price list upload, landed cost), Part 7.
+10. Part 2 full (invites, price list upload, landed cost), Part 7.
 
 ## 11. How we build with Claude Code (less vibe coding)
 

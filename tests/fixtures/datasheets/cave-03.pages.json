@@ -1,0 +1,18 @@
+{
+  "pageCount": 2,
+  "pages": [
+    {
+      "page": 1,
+      "text": "JISO\nCAVE 03\nEmpotrable / Recessed / Encastré\nRef.: 7IA53603-21J_-__\nPotencia / Power / Puissance: 3W\nCCT: 2700K / 3000K / 4000K\nLm Final: 194 / 204 / 215\nLm Chip: 268 / 286 / 286\nEficacia chip / Chip efficacy / Efficacité puce: 89 lm/W (2K), 95 lm/W\nChip LED / LED chip / Puce LED — Marca / Brand / Marque: Bridgelux\nIP: Ext 44 Int 20\nVida útil / Lifetime / Durée de vie: 100.000 h\nCiclos de encendido / Switching cycles / Cycles d'allumage: 15.000\nPeso / Weight / Poids: 0,05 Kg\n35\nØ30\n35\nwww.jiso.example"
+    },
+    {
+      "page": 2,
+      "text": "CAVE 03\nAcabados / Finishes / Finitions\n01 Negro / Black / Noir\n09 Oro / Gold / Or\n90 Blanco / White / Blanc\nDescargas / Downloads / Téléchargements\nIES LDT Instalación / Installation / Installation\nJISO · www.jiso.example"
+    }
+  ],
+  "links": [
+    { "page": 2, "url": "https://www.jiso.example/downloads/cave-03.ies" },
+    { "page": 2, "url": "https://www.jiso.example/downloads/cave-03.ldt" },
+    { "page": 2, "url": "https://www.jiso.example/downloads/cave-03-installation.pdf" }
+  ]
+}

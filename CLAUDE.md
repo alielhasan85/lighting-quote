@@ -15,19 +15,31 @@ company is a **workspace**, and every workspace's data is isolated. The why:
 - Every company (contractor or supplier) is a **workspace**. Every private table has `workspaceId`, and every query on
   it filters by it.
 - Isolation is enforced in code today: every page and action names a permission, and every query filters by
-  `workspaceId`. Postgres row-level security is NOW.md row F-4, and lands before P-3, the first private project data.
-- **Global library** (brands, families, variants, datasheets, images: public technical data) is shared and read-only
-  for workspaces. Only platform admins write it (`createAdminAction`).
+  `workspaceId`. Postgres row-level security is NOW.md row F-4, and lands before P-3 and W-1, the first private project
+  data and the first private uploads.
+- **Global library** (brands, catalogues with their versions and pages, families with their extractions and variants,
+  the search table, images: public technical data) is shared and read-only for workspaces. Only platform admins write
+  it (`createAdminAction`). It takes publicly available manufacturer documents only, with each document's source
+  recorded. From F-4 it carries no RLS: the app's database role gets SELECT only on it, by GRANT, so search keeps its
+  indexes. Every table a brand owns as a unit carries `brandId`.
 - **Private data** (prices, private products, clients, projects, inquiries, quotes, selections, usage history) lives
-  only in workspace tables.
+  only in workspace tables. A workspace's own catalogues and products will be rows with its `workspaceId` in the library
+  tables (W-1, after F-4), with their search rows in a separate RLS table. A workspace's links to products point at the
+  stable family (`ProductFamily` + variant key), never at one extraction.
 - **One-way flow:** global → workspace. Nothing from a workspace is ever written into global tables or used for
-  another workspace.
-- No cross-workspace analytics, aggregates or "market price" features. Ever.
+  another workspace. A workspace's searches, selections and uploads never change what the global library extracts,
+  verifies or ranks, so global families are extracted at upload, never on demand.
+- No cross-workspace analytics, aggregates or "market price" features, including "most used" signals for deciding what
+  to verify. Ever.
 
 ### AI
 
 - AI (Claude API) is used for extraction, matching/ranking, explanations and image description.
 - **Prices are never computed or seen by AI.** Pricing is deterministic TypeScript. No price data in any prompt.
+- A document page reaches a prompt only if code classed it as a text page or a person cleared it: price pages,
+  scanned pages and excluded pages never do, and a test proves it. Extraction schemas have no price field.
+- **AI never invents a value and never declares compliance.** Every extracted value carries its document version, page
+  and printed text, and code checks that text is on that page. PASS / FAIL / UNKNOWN is deterministic code.
 - AI calls receive the minimum data needed. No supplier names, client names or prices in matching prompts.
 - All AI output that becomes data is validated with a zod schema (`lib/ai/schemas/`). Invalid → retry once → mark for
   human review.
@@ -41,6 +53,13 @@ company is a **workspace**, and every workspace's data is isolated. The why:
   project.
 - Quote lines reference real product variants (global or private), not free text (free text only for "manual / no
   match" lines).
+- A quote line, and each stored option, keeps a snapshot: variant, options, specs, document version, page, printed
+  text. A new catalogue or a re-extraction never changes a sent quote.
+- Uploaded documents and their versions are kept. A new version supersedes the old one and never overwrites it, and a
+  re-extraction never edits a verified family.
+- **Search** reads the search table and filters only on fields that are almost always present. A missing value is
+  UNKNOWN in code, never a filter. Ranking runs in named steps (compliance → technical rank → the workspace's own
+  preferences → later, a sponsored slot shown apart), and no step after compliance changes PASS / FAIL / UNKNOWN.
 - Documents (client quote and brand RFQ; later sales order, PO) share one structure: number series, status, lines,
   revisions, PDF.
 - Status changes are recorded in an **event log** table.
@@ -112,7 +131,8 @@ tests/fixtures/  Anonymized RFQs, datasheets and expected outputs: the accuracy 
 
 **Stack:** Next.js 16 (App Router, server actions) · React 19 · TypeScript strict · Prisma 6 + Neon · Auth.js v5 ·
 Tailwind + shadcn/ui · zod · Vitest · Vercel. Added by the row that first needs them: Claude API (`@anthropic-ai/sdk`),
-Voyage embeddings + pgvector, Inngest, Vercel Blob, SheetJS / ExcelJS, React-PDF / pdf-lib, Sentry.
+`unpdf`, `pdf-lib`, Inngest, file storage (Vercel Blob or R2: to decide), SheetJS / ExcelJS, React-PDF, Sentry. Later:
+Voyage embeddings + pgvector.
 
 ## Commands
 

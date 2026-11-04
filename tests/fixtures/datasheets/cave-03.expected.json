@@ -1,0 +1,100 @@
+{
+  "family": {
+    "name": "CAVE 03",
+    "brandName": "JISO",
+    "orderCodeTemplate": "7IA53603-21J_-__"
+  },
+  "options": [
+    { "axis": "FINISH", "code": "01", "label": "Black" },
+    { "axis": "FINISH", "code": "09", "label": "Gold" },
+    { "axis": "FINISH", "code": "90", "label": "White" }
+  ],
+  "variants": [
+    {
+      "axisValues": { "CCT": 2700 },
+      "orderCode": null,
+      "wattsMin": 3,
+      "wattsMax": 3,
+      "lumensDeliveredMin": 194,
+      "lumensDeliveredMax": 194,
+      "lumensChipMin": 268,
+      "lumensChipMax": 268,
+      "cctMin": 2700,
+      "cctMax": 2700,
+      "ipFront": 44,
+      "ipRear": 20,
+      "criMin": 80,
+      "ugrMax": 19,
+      "electricalClass": "II",
+      "lifetimeHours": 100000,
+      "weightKg": 0.05,
+      "cutOutMm": 30,
+      "diameterMm": 35,
+      "heightMm": 35,
+      "warrantyYears": 5
+    },
+    {
+      "axisValues": { "CCT": 3000 },
+      "orderCode": null,
+      "wattsMin": 3,
+      "wattsMax": 3,
+      "lumensDeliveredMin": 204,
+      "lumensDeliveredMax": 204,
+      "lumensChipMin": 286,
+      "lumensChipMax": 286,
+      "cctMin": 3000,
+      "cctMax": 3000,
+      "ipFront": 44,
+      "ipRear": 20,
+      "criMin": 80,
+      "ugrMax": 19,
+      "electricalClass": "II",
+      "lifetimeHours": 100000,
+      "weightKg": 0.05,
+      "cutOutMm": 30,
+      "diameterMm": 35,
+      "heightMm": 35,
+      "warrantyYears": 5
+    },
+    {
+      "axisValues": { "CCT": 4000 },
+      "orderCode": null,
+      "wattsMin": 3,
+      "wattsMax": 3,
+      "lumensDeliveredMin": 215,
+      "lumensDeliveredMax": 215,
+      "lumensChipMin": 286,
+      "lumensChipMax": 286,
+      "cctMin": 4000,
+      "cctMax": 4000,
+      "ipFront": 44,
+      "ipRear": 20,
+      "criMin": 80,
+      "ugrMax": 19,
+      "electricalClass": "II",
+      "lifetimeHours": 100000,
+      "weightKg": 0.05,
+      "cutOutMm": 30,
+      "diameterMm": 35,
+      "heightMm": 35,
+      "warrantyYears": 5
+    }
+  ],
+  "figures": [
+    { "kind": "PRODUCT_PHOTO", "page": 1 },
+    { "kind": "DRAWING", "page": 1 },
+    { "kind": "FINISH_PHOTO", "page": 2 },
+    { "kind": "FINISH_PHOTO", "page": 2 },
+    { "kind": "FINISH_PHOTO", "page": 2 }
+  ],
+  "flags": [
+    { "code": "DRAWING_VALUE", "field": "specs.cutOut" },
+    { "code": "DRAWING_VALUE", "field": "specs.diameter" },
+    { "code": "DRAWING_VALUE", "field": "specs.height" },
+    { "code": "ICON_VALUE", "field": "specs.cri" },
+    { "code": "ICON_VALUE", "field": "specs.ugr" },
+    { "code": "ICON_VALUE", "field": "specs.electricalClass" },
+    { "code": "ICON_VALUE", "field": "specs.warranty" },
+    { "code": "CODE_INCOMPLETE", "field": "family.orderCodeTemplate" }
+  ]
+}
